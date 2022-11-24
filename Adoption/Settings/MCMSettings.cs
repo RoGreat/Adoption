@@ -1,9 +1,9 @@
 ﻿using MCM.Abstractions.Attributes.v2;
-using MCM.Abstractions.Base.PerSave;
+using MCM.Abstractions.Base.Global;
 
 namespace Adoption.Settings
 {
-    internal sealed class MCMSettings : AttributePerSaveSettings<MCMSettings>, ISettingsProvider
+    internal sealed class MCMSettings : AttributeGlobalSettings<MCMSettings>, ISettingsProvider
     {
         public override string Id => SubModule.ModId + "Settings";
 
