@@ -36,10 +36,6 @@ namespace Adoption.Behaviors
         private delegate void SetHeroStaticBodyPropertiesDelegate(Hero instance, StaticBodyProperties @value);
         private static readonly SetHeroStaticBodyPropertiesDelegate? SetHeroStaticBodyProperties = AccessTools2.GetPropertySetterDelegate<SetHeroStaticBodyPropertiesDelegate>(typeof(Hero), "StaticBodyProperties");
 
-        /* Methods */
-        private delegate void CompanionAdjustEquipmentDelegate(CompanionsCampaignBehavior instance, Hero companion);
-        private static readonly CompanionAdjustEquipmentDelegate? CompanionAdjustEquipment = AccessTools2.GetDelegate<CompanionAdjustEquipmentDelegate>(typeof(CompanionsCampaignBehavior), "AdjustEquipment");
-
         public AdoptionCampaignBehavior()
         {
             _adoptableAgents = new();
