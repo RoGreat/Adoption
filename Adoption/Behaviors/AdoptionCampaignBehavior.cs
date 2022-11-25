@@ -15,7 +15,7 @@ using static Adoption.Debug;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
 using HarmonyLib.BUTR.Extensions;
 using TaleWorlds.CampaignSystem.Extensions;
-using TaleWorlds.CampaignSystem.Actions;
+using TaleWorlds.TwoDimension;
 
 namespace Adoption.Behaviors
 {
@@ -24,6 +24,14 @@ namespace Adoption.Behaviors
         private List<Agent>? _adoptableAgents;
 
         private List<Agent>? _notAdoptableAgents;
+
+        private List<Agent>? _adoptedAgents;
+
+        // Helper to reset adoption attempts
+        public void ResetAdoptionAttempts()
+        {
+            _notAdoptableAgents!.Clear();
+        }
 
         /* Outside */
         /* Fields */
@@ -40,6 +48,7 @@ namespace Adoption.Behaviors
         {
             _adoptableAgents = new();
             _notAdoptableAgents = new();
+            _adoptedAgents = new();
         }
 
         protected void AddDialogs(CampaignGameStarter starter)
@@ -55,25 +64,22 @@ namespace Adoption.Behaviors
         private void RemoveAgents()
         {
             // If the list is empty then return
-            if (_notAdoptableAgents.IsEmpty() && _adoptableAgents.IsEmpty())
+            if (_notAdoptableAgents.IsEmpty() && _adoptableAgents.IsEmpty() && _adoptedAgents.IsEmpty())
             {
                 return;
             }
-            // Clear all items in _heroes if none of the agents are in the current mission
+            // Clear all items in list(s) if none of the agents are in the current mission
             foreach (Agent agent in Mission.Current.Agents)
             {
                 // If there is an agent present then return
-                if (_notAdoptableAgents!.Contains(agent))
-                {
-                    return;
-                }
-                if (_adoptableAgents!.Contains(agent))
+                if (_notAdoptableAgents!.Contains(agent) || _adoptableAgents!.Contains(agent) || _adoptedAgents!.Contains(agent))
                 {
                     return;
                 }
             }
             _notAdoptableAgents!.Clear();
             _adoptableAgents!.Clear();
+            _adoptedAgents!.Clear();
         }
 
         private bool conversation_adopt_child_on_condition()
@@ -83,7 +89,7 @@ namespace Adoption.Behaviors
 
             Agent conversationAgent = (Agent)Campaign.Current.ConversationManager.OneToOneConversationAgent;
 
-            if (_notAdoptableAgents!.Contains(conversationAgent))
+            if (_notAdoptableAgents!.Contains(conversationAgent) || _adoptedAgents!.Contains(conversationAgent))
             {
                 Print("Cannot Adopt");
                 return false;
@@ -118,54 +124,52 @@ namespace Adoption.Behaviors
             ModSettings settings = new();
 
             Agent conversationAgent = (Agent)Campaign.Current.ConversationManager.OneToOneConversationAgent;
+            CharacterObject conversationCharacter = Campaign.Current.ConversationManager.OneToOneConversationCharacter;
 
             // Add to non adoptable agents to not adopt same kid again
-            _notAdoptableAgents!.Add(conversationAgent);
-
-            Agent agent = (Agent)Campaign.Current.ConversationManager.OneToOneConversationAgent;
-            CharacterObject character = CharacterObject.OneToOneConversationCharacter;
-
-            CharacterObject conversationCharacter = Campaign.Current.ConversationManager.OneToOneConversationCharacter;
+            _adoptedAgents!.Add(conversationAgent);
 
             // Remove agents not in scene
             RemoveAgents();
 
-            CharacterObject template = conversationCharacter;
+            int becomeChildAge = Campaign.Current.Models.AgeModel.BecomeChildAge;
+            int heroComesOfAge = Campaign.Current.Models.AgeModel.HeroComesOfAge;
 
             // Create a new hero!
-            Hero hero = HeroCreator.CreateSpecialHero(template, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, (int)conversationAgent.Age);
+            Hero hero = HeroCreator.CreateSpecialHero(conversationCharacter, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, (int)Mathf.Clamp(conversationAgent.Age, becomeChildAge, heroComesOfAge));
             // Set occupation to Lord
             hero.SetNewOccupation(Occupation.Lord);
-
-            int heroComesOfAge = Campaign.Current.Models.AgeModel.HeroComesOfAge;
-            int becomeChildAge = Campaign.Current.Models.AgeModel.BecomeChildAge;
 
             // Mother and father assignment
             // Necessary for an education
 
-            // Not necessary as long as the character is at year 5 (skipping year 2).
+
+            // Creating a mother/father is not necessary as long as the character is at year 5 (skipping year 2).
             // Might be recommended just in case... No harm done... probably.
+            // Refs:
             // EducationCampaignBehavior -> GetStage
             // NotableWantsDaughterFoundIssueBehavior -> NotableWantsDaughterFoundIssueQuest
-            int num = MBRandom.RandomInt(heroComesOfAge + (int)hero.Age, heroComesOfAge * 2 + (int)hero.Age);
-            CharacterObject randomElementWithPredicate;
+
+            //int num = MBRandom.RandomInt(heroComesOfAge + (int)hero.Age, heroComesOfAge * 2 + (int)hero.Age);
+            //CharacterObject randomElementWithPredicate;
+
             if (Hero.MainHero.IsFemale)
             {
                 // You
                 hero.Mother = Hero.MainHero;
                 // Randomly generate a father
-                randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && !x.IsFemale);
-                hero.Father = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, num);
-                KillCharacterAction.ApplyByRemove(hero.Father);
+                //randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && !x.IsFemale);
+                //hero.Father = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, num);
+                //KillCharacterAction.ApplyByRemove(hero.Father);
             }
             else
             {
                 // You
                 hero.Father = Hero.MainHero;
                 // Randomly generate a mother
-                randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && x.IsFemale);
-                hero.Mother = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, num);
-                KillCharacterAction.ApplyByRemove(hero.Mother);
+                //randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && x.IsFemale);
+                //hero.Mother = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, num);
+                //KillCharacterAction.ApplyByRemove(hero.Mother);
             }
 
             EquipmentFlags customFlags = EquipmentFlags.IsNobleTemplate | EquipmentFlags.IsChildEquipmentTemplate;
@@ -180,14 +184,12 @@ namespace Adoption.Behaviors
             }
 
             // Name permanence from the adoption module of old
-            //AgentName!.SetValue(conversationAgent, _companionHero.Name);
             AgentName!(conversationAgent) = hero.Name;
 
             // Meet character for first time
             hero.HasMet = true;
 
             // Give hero the agent's appearance
-            //SetHeroStaticBodyProperties!.SetValue(_companionHero, conversationAgent.BodyPropertiesValue.StaticProperties);
             SetHeroStaticBodyProperties!(hero, conversationAgent.BodyPropertiesValue.StaticProperties);
 
             HeroHelper.DetermineInitialLevel(hero);
@@ -195,13 +197,11 @@ namespace Adoption.Behaviors
             CharacterDevelopmentCampaignBehavior characterDevelopmentCampaignBehaviorInstance = Campaign.Current.CampaignBehaviorManager.GetBehavior<CharacterDevelopmentCampaignBehavior>();
             characterDevelopmentCampaignBehaviorInstance.DevelopCharacterStats(hero);
 
-            //character.HeroObject = _companionHero;
-            //SetHeroObject!.SetValue(conversationCharacter, _companionHero);
             SetHeroObject!(conversationCharacter, hero);
 
-            // Cool idea. Might put this into Recruit Everyone, too!
-            AccessTools.Field(typeof(Agent), "_name").SetValue(agent, hero.Name);
+            // Notification of adoption
             OnHeroAdopted(Hero.MainHero, hero);
+
             // Follows you! I like this feature :3
             Campaign.Current.ConversationManager.ConversationEndOneShot += FollowMainAgent;
 
@@ -212,6 +212,20 @@ namespace Adoption.Behaviors
             if (hero.Age > heroComesOfAge || (hero.Age == heroComesOfAge && hero.BirthDay.GetDayOfYear < CampaignTime.Now.GetDayOfYear))
             {
                 CampaignEventDispatcher.Instance.OnHeroComesOfAge(hero);
+            }
+
+            // Must not forget or it gets very weird...
+            RemoveHeroObjectFromCharacter();
+        }
+
+        public void RemoveHeroObjectFromCharacter()
+        {
+            CharacterObject conversationCharacter = Campaign.Current.ConversationManager.OneToOneConversationCharacter;
+
+            // Remove hero association from character
+            if (conversationCharacter.HeroObject is not null)
+            {
+                SetHeroObject!(conversationCharacter, null!);
             }
         }
 
