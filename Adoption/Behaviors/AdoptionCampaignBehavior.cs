@@ -133,7 +133,9 @@ namespace Adoption.Behaviors
             CharacterObject template = conversationCharacter;
 
             // Create a new hero!
-            Hero hero = HeroCreator.CreateSpecialHero(template, Hero.MainHero.CurrentSettlement, null, null, (int)conversationAgent.Age);
+            Hero hero = HeroCreator.CreateSpecialHero(template, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, (int)conversationAgent.Age);
+            // Set occupation to Lord
+            hero.SetNewOccupation(Occupation.Lord);
 
             int heroComesOfAge = Campaign.Current.Models.AgeModel.HeroComesOfAge;
             int becomeChildAge = Campaign.Current.Models.AgeModel.BecomeChildAge;
@@ -141,10 +143,12 @@ namespace Adoption.Behaviors
             // Mother and father assignment
             // Necessary for an education
 
+            // Not necessary as long as the character is at year 5 (skipping year 2).
+            // Might be recommended just in case... No harm done... probably.
+            // EducationCampaignBehavior -> GetStage
             // NotableWantsDaughterFoundIssueBehavior -> NotableWantsDaughterFoundIssueQuest
             int num = MBRandom.RandomInt(heroComesOfAge + (int)hero.Age, heroComesOfAge * 2 + (int)hero.Age);
             CharacterObject randomElementWithPredicate;
-
             if (Hero.MainHero.IsFemale)
             {
                 // You
