@@ -8,5 +8,6 @@
 		<string id="adoption_chance_desc" text="Chance that a child is up for adoption." />
 		<string id="debug" text="Debug" />
 		<string id="debug_desc" text="Displays mod developer debug information in the game's message log." />
+    <string id="reset_adoption_attempts" text="Reset Adoption Attempts" />
   </strings>
 </base>
