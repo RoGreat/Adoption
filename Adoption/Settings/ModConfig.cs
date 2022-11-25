@@ -30,7 +30,7 @@ namespace Adoption.Settings
 
     internal static class ModConfig
     {
-        private static float _adoptionChance = 0.05f;
+        private static float _adoptionChance = 1f;
 
         private static bool _debug = false;
 

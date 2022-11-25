@@ -10,7 +10,7 @@ namespace Adoption.Settings
     {
         public override string Id => SubModule.ModId + "Settings";
 
-        public override string DisplayName => SubModule.ModId + $" {typeof(MCMSettings).Assembly.GetName().Version.ToString(3)}";
+        public override string DisplayName => SubModule.ModTitle + $" {typeof(MCMSettings).Assembly.GetName().Version.ToString(3)}";
 
         public override string FolderName => SubModule.ModId;
 
