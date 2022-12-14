@@ -16,6 +16,7 @@ using TaleWorlds.CampaignSystem.CampaignBehaviors;
 using HarmonyLib.BUTR.Extensions;
 using TaleWorlds.CampaignSystem.Extensions;
 using TaleWorlds.TwoDimension;
+using TaleWorlds.CampaignSystem.Actions;
 
 namespace Adoption.Behaviors
 {
@@ -143,33 +144,32 @@ namespace Adoption.Behaviors
             // Mother and father assignment
             // Necessary for an education
 
-
             // Creating a mother/father is not necessary as long as the character is at year 5 (skipping year 2).
             // Might be recommended just in case... No harm done... probably.
             // Refs:
             // EducationCampaignBehavior -> GetStage
             // NotableWantsDaughterFoundIssueBehavior -> NotableWantsDaughterFoundIssueQuest
 
-            //int num = MBRandom.RandomInt(heroComesOfAge + (int)hero.Age, heroComesOfAge * 2 + (int)hero.Age);
-            //CharacterObject randomElementWithPredicate;
+            int num = MBRandom.RandomInt(heroComesOfAge + (int)hero.Age, heroComesOfAge * 2 + (int)hero.Age);
+            CharacterObject randomElementWithPredicate;
 
             if (Hero.MainHero.IsFemale)
             {
                 // You
                 hero.Mother = Hero.MainHero;
                 // Randomly generate a father
-                //randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && !x.IsFemale);
-                //hero.Father = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, num);
-                //KillCharacterAction.ApplyByRemove(hero.Father);
+                randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && !x.IsFemale);
+                hero.Father = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, num);
+                KillCharacterAction.ApplyByRemove(hero.Father);
             }
             else
             {
                 // You
                 hero.Father = Hero.MainHero;
                 // Randomly generate a mother
-                //randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && x.IsFemale);
-                //hero.Mother = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, num);
-                //KillCharacterAction.ApplyByRemove(hero.Mother);
+                randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && x.IsFemale);
+                hero.Mother = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, num);
+                KillCharacterAction.ApplyByRemove(hero.Mother);
             }
 
             EquipmentFlags customFlags = EquipmentFlags.IsNobleTemplate | EquipmentFlags.IsChildEquipmentTemplate;
