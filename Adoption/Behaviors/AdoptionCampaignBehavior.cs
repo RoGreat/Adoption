@@ -66,6 +66,8 @@ namespace Adoption.Behaviors
 
         public void OnSessionLaunched(CampaignGameStarter campaignGameStarter)
         {
+            StringHelpers.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
+            StringHelpers.SetCharacterProperties("CONVERSATION_CHARACTER", CharacterObject.OneToOneConversationCharacter);
             AddDialogs(campaignGameStarter);
         }
 
