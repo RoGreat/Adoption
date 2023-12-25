@@ -22,5 +22,9 @@ namespace Adoption
 
         [SettingPropertyFloatingInteger("{=TRLkkn8V}Adoption Chance", 0f, 1f, "#0%", RequireRestart = false, Order = 1, HintText = "{=zqWrjVgu}Chance that a child is up for adoption.")]
         public float AdoptionChance { get; set; } = 1f;
+
+        [SettingPropertyButton("{=zSklyZ76}Reset Adoption Attempts", Content = "{=Z3WQjWfW}Reset", Order = 2, RequireRestart = false)]
+        public Action ResetAdoptionAttempts { get; set; } = () => Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>().ResetAdoptionAttempts();
+
     }
 }

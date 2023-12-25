@@ -86,6 +86,10 @@ namespace Adoption.Behaviors
             InformationManager.DisplayMessage(new InformationMessage(textObject.ToString()));
         }
 
+        public void ResetAdoptionAttempts()
+        {
+        }
+
         public void OnSessionLaunched(CampaignGameStarter campaignGameStarter)
         {
             StringHelpers.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);

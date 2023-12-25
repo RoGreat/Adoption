@@ -12,7 +12,7 @@
     
     <ModuleId>$(MSBuildProjectName)</ModuleId>
     <ModuleName>$(MSBuildProjectName)</ModuleName>
-    <ModuleUrl></ModuleUrl>
+    <ModuleUrl>https://www.nexusmods.com/mountandblade2bannerlord/mods/4793</ModuleUrl>
     <GameFolder>$(BANNERLORD_GAME_DIR)</GameFolder>
     <!-- Module manually override GameVersion -->
     <!-- <OverrideGameVersion>v1.0.0</OverrideGameVersion> -->

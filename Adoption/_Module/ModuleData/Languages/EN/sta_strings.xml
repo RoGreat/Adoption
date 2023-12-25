@@ -7,7 +7,9 @@
 		<string id="UQS8Ot22" text="Adoption {VERSION}" />
 		<string id="TRLkkn8V" text="Adoption Chance" />
 		<string id="zqWrjVgu" text="Chance that a child is up for adoption." />
-						
+		<string id="zSklyZ76" text="Reset Adoption Attempts" />
+		<string id="Z3WQjWfW" text="Reset" />
+
 		<string id="DjzDTNHw" text="{ADOPTER.LINK} adopted {ADOPTED_HERO.LINK}."/>
 		<string id="Sm4JdIxx" text="I can tell you have no parents to go back to child. I can be your {?PLAYER.GENDER}mother{?}father{\\?} if that is the case." />
 		<string id="P2m6bJg6" text="You want to be my {?PLAYER.GENDER}Ma{?}Pa{\\?}? Okay then![rf:happy][rb:very_positive]" />
