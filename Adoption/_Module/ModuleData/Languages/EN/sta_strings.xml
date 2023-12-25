@@ -12,7 +12,7 @@
 
 		<string id="DjzDTNHw" text="{ADOPTER.LINK} adopted {ADOPTED_HERO.LINK}."/>
 		<string id="Sm4JdIxx" text="I can tell you have no parents to go back to child. I can be your {?PLAYER.GENDER}mother{?}father{\\?} if that is the case." />
-		<string id="P2m6bJg6" text="You want to be my {?PLAYER.GENDER}Ma{?}Pa{\\?}? Okay then![rf:happy][rb:very_positive]" />
+		<string id="P2m6bJg6" text="You want to be my {?PLAYER.GENDER}ma{?}pa{\\?}? Okay then![rf:happy][rb:very_positive]" />
 		<string id="Na4j2oGk" text="Do you not have any parents to take care of you young {?CONVERSATION_CHARACTER.GENDER}woman{?}man{\\?}? You are welcome to be a part of my family." />
 		<string id="NoHJAxWx" text="Thanks for allowing me to be a part of your family {?PLAYER.GENDER}milady{?}sir{\\?}. I gratefully accept![rf:happy][rb:very_positive]" />
 	</strings>
