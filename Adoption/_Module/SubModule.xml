@@ -1,6 +1,5 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<Module xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
-        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/BUTR/Bannerlord.XmlSchemas/master/SubModule.xsd" >
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Module>
   <Id value="$moduleid$" />
   <Name value="$modulename$" />
   <Version value="v$version$" />
@@ -16,8 +15,6 @@
     <DependedModule Id="Native" DependentVersion="$gameversion$" />
     <DependedModule Id="SandBoxCore" DependentVersion="$gameversion$" />
     <DependedModule Id="Sandbox" DependentVersion="$gameversion$" />
-    <DependedModule Id="StoryMode" DependentVersion="$gameversion$" />
-    <DependedModule Id="CustomBattle" DependentVersion="$gameversion$" />
   </DependedModules>
   <!-- Community Dependency Metadata -->
   <!-- https://github.com/BUTR/Bannerlord.BLSE#for-modders -->
@@ -29,15 +26,15 @@
     <DependedModuleMetadata id="Native" order="LoadBeforeThis" version="$gameversion$.*" />
     <DependedModuleMetadata id="SandBoxCore" order="LoadBeforeThis" version="$gameversion$.*" />
     <DependedModuleMetadata id="Sandbox" order="LoadBeforeThis" version="$gameversion$.*" />
-    <DependedModuleMetadata id="StoryMode" order="LoadBeforeThis" version="$gameversion$.*" />
-    <DependedModuleMetadata id="CustomBattle" order="LoadBeforeThis" version="$gameversion$.*" />
+    <DependedModuleMetadata id="StoryMode" order="LoadBeforeThis" version="$gameversion$.*" optional="true" />
+    <DependedModuleMetadata id="CustomBattle" order="LoadBeforeThis" version="$gameversion$.*" optional="true" />
+    <DependedModuleMetadata id="BirthAndDeath" order="LoadBeforeThis" version="$gameversion$.*" optional="true" />
   </DependedModuleMetadatas>
   <SubModules>
     <SubModule>
       <Name value="$modulename$" />
       <DLLName value="$moduleid$.$gameversion$.dll" />
-      <SubModuleClassType value="$moduleid$.SubModule" />
-      <Tags />
+      <SubModuleClassType value="$moduleid$.AdoptionSubModule" />
     </SubModule>
   </SubModules>
 </Module>

@@ -1,19 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<base xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/BUTR/Bannerlord.XmlSchemas/master/ModuleLanguage.xsd">
+<base xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" type="string" >
 	<tags>
-		<tag language="Español"/>
+		<tag language="Español (LA)" />
 	</tags>
 	<strings>
 		<string id="UQS8Ot22" text="Adopción {VERSION}" />
 		<string id="TRLkkn8V" text="Posibilidad de Adopción" />
 		<string id="zqWrjVgu" text="Posibilidad que un niño puede ser adoptado." />
-		<string id="zSklyZ76" text="Restablecer la Oportunidad de Adopción" />
+		<string id="zSklyZ76" text="Restablecer la Posibilidad de Adopción" />
 		<string id="Z3WQjWfW" text="Restablecer" />
 
 		<string id="DjzDTNHw" text="{ADOPTER.LINK} adoptó a {ADOPTED_HERO.LINK}."/>
 		<string id="Sm4JdIxx" text="Veo que sus padres no han regresado. Puedo ser su {?PLAYER.GENDER}madre{?}padre{\\?} si es así." />
 		<string id="P2m6bJg6" text="¿Quiere ser mi {?PLAYER.GENDER}mamá{?}papá{\\?}? ¡Está bien![rf:happy][rb:very_positive]" />
-		<string id="Na4j2oGk" text="¿No tiene padres que puedan cuidar de usted, {?CONVERSATION_CHARACTER.GENDER}jovencita{?}jovencito{\\?}? Eres bienvenido a ser parte de mi familia." />
+		<string id="Na4j2oGk" text="¿No tiene padres que puedan cuidar de usted {?CONVERSATION_CHARACTER.GENDER}jovencita{?}jovencito{\\?}? Eres bienvenido a ser parte de mi familia." />
 		<string id="NoHJAxWx" text="Gracias por permitirme ser un parte de su familia {?PLAYER.GENDER}señora{?}señor{\\?}. ¡Acepto con gratidud![rf:happy][rb:very_positive]" />
 	</strings>
 </base>

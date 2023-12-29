@@ -10,14 +10,14 @@ using TaleWorlds.Localization;
 
 namespace Adoption
 {
-    internal sealed class Settings : AttributeGlobalSettings<Settings>
+    public class AdoptionSettings : AttributeGlobalSettings<AdoptionSettings>
     {
         public override string Id => "AdoptionSettings_v2";
         public override string FolderName => "Adoption";
         public override string FormatType => "json2";
         public override string DisplayName => new TextObject("{=UQS8Ot22}Adoption {VERSION}", new()
         {
-            { "VERSION", typeof(Settings).Assembly.GetName().Version?.ToString(3) ?? "ERROR" }
+            { "VERSION", typeof(AdoptionSettings).Assembly.GetName().Version?.ToString(3) ?? "ERROR" }
         }).ToString();
 
         [SettingPropertyFloatingInteger("{=TRLkkn8V}Adoption Chance", 0f, 1f, "#0%", RequireRestart = false, Order = 1, HintText = "{=zqWrjVgu}Chance that a child is up for adoption.")]
