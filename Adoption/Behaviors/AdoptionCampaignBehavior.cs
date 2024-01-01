@@ -4,7 +4,6 @@ using HarmonyLib.BUTR.Extensions;
 using Helpers;
 
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.Conversation;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.Localization;
@@ -15,7 +14,6 @@ using SandBox.Conversation;
 using SandBox.Missions.AgentBehaviors;
 
 using MCM;
-using System;
 
 namespace Adoption.Behaviors
 {
@@ -29,8 +27,7 @@ namespace Adoption.Behaviors
         private delegate void SetHeroStaticBodyPropertiesDelegate(Hero instance, StaticBodyProperties @value);
         private static readonly SetHeroStaticBodyPropertiesDelegate? SetHeroStaticBodyProperties = AccessTools2.GetPropertySetterDelegate<SetHeroStaticBodyPropertiesDelegate>(typeof(Hero), "StaticBodyProperties");
 
-        private Hero MainHero => Hero.MainHero;
-        private AdoptionSettings? Settings => GetCampaignBehavior<SettingsProviderCampaignBehavior>() is { } behavior ? behavior.Get<AdoptionSettings>() : null;
+        private Settings? Settings => GetCampaignBehavior<SettingsProviderCampaignBehavior>() is { } behavior ? behavior.Get<Settings>() : null;
 
         public override void RegisterEvents()
         {
@@ -41,13 +38,14 @@ namespace Adoption.Behaviors
 
         public void OnSessionLaunched(CampaignGameStarter campaignGameStarter)
         {
+            StringHelpers.SetCharacterProperties("PLAYER", Hero.MainHero.CharacterObject);
             AddDialogs(campaignGameStarter);
         }
 
-        public void AddDialogs(CampaignGameStarter campaignGameStarter)
+        public void AddDialogs(CampaignGameStarter starter)
         {
-            AddChildrenDialogs(campaignGameStarter);
-            AddTeenagerDialogs(campaignGameStarter);
+            AddChildrenDialogs(starter);
+            AddTeenagerDialogs(starter);
         }
 
         protected void AddChildrenDialogs(CampaignGameStarter starter)
@@ -61,7 +59,7 @@ namespace Adoption.Behaviors
             starter.AddDialogLine(
                 "character_adoption_response",
                 "adoption_child", "close_window",
-                "{=P2m6bJg6}You want to be my {?PLAYER.GENDER}ma{?}pa{\\?}? Okay then![rf:happy][rb:very_positive]",
+                "{=P2m6bJg6}You want to be my {?PLAYER.GENDER}mom{?}dad{\\?}? Okay then![rf:happy][rb:very_positive]",
                 null, conversation_adopt_child_on_consequence,
                 100);
         }
@@ -72,25 +70,35 @@ namespace Adoption.Behaviors
                 "adoption_discussion",
                 "town_or_village_player", "adoption_teen",
                 "{=Na4j2oGk}Do you not have any parents to take care of you young {?CONVERSATION_CHARACTER.GENDER}woman{?}man{\\?}? You are welcome to be a part of my family.",
-                conversation_adopt_child_on_condition, null,
+                conversation_adopt_teenager_on_condition, null,
                 120);
             starter.AddDialogLine(
                 "character_adoption_response",
                 "adoption_teen", "close_window",
-                "{=NoHJAxWx}Thanks for allowing me to be a part of your family {?PLAYER.GENDER}milady{?}sir{\\?}. I gratefully accept![rf:happy][rb:very_positive]",
+                "{=NoHJAxWx}Thanks for allowing me to be a part of your family {?PLAYER.GENDER}madam{?}sir{\\?}. I gratefully accept![rf:happy][rb:very_positive]",
                 null, conversation_adopt_child_on_consequence,
                 100);
         }
 
         private bool conversation_adopt_child_on_condition()
         {
-            StringHelpers.SetCharacterProperties("CONVERSATION_CHARACTER", CharacterObject.OneToOneConversationCharacter);
+            return conversationAdoptionDialog();
+        }
 
+        private bool conversation_adopt_teenager_on_condition()
+        {
+            return conversationAdoptionDialog();
+        }
+
+        private bool conversationAdoptionDialog()
+        {
             Agent agent = (Agent)Campaign.Current.ConversationManager.OneToOneConversationAgent;
+
             if (agent.Age < Campaign.Current.Models.AgeModel.HeroComesOfAge)
             {
                 return true;
             }
+
             return true;
         }
 
@@ -112,7 +120,7 @@ namespace Adoption.Behaviors
             text.SetTextVariable("ADOPTER", adopter.Name)
                 .SetTextVariable("ADOPTED_HERO", adoptedHero.Name);
 
-            InformationManager.DisplayMessage(new(text.Value));
+            InformationManager.DisplayMessage(new(text.ToString()));
         }
 
         public void ResetAdoptionAttempts()

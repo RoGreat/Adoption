@@ -1,14 +1,14 @@
 <Project Sdk="Bannerlord.BUTRModule.Sdk/1.1.0.104">
 
   <PropertyGroup>
-    <Version>1.0.3</Version>
-    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
+    <Version>0.0.1</Version>
+    <TargetFrameworks>net472;net6</TargetFrameworks>
     <Platforms>x64</Platforms>
     <LangVersion>10.0</LangVersion>
     <Nullable>enable</Nullable>
 
-    <BuildForWindows>true</BuildForWindows>
-    <BuildForWindowsStore>true</BuildForWindowsStore>
+    <BuildForWindows>false</BuildForWindows>
+    <BuildForWindowsStore>false</BuildForWindowsStore>
     
     <ModuleId>$(MSBuildProjectName)</ModuleId>
     <ModuleName>$(MSBuildProjectName)</ModuleName>
@@ -22,7 +22,7 @@
     <!-- Steam/GOG/Epic versions of the game -->
     <BuildForWindows>true</BuildForWindows>
   </PropertyGroup>
-  <PropertyGroup Condition="$(TargetFramework) == 'netcoreapp3.1'">
+  <PropertyGroup Condition="$(TargetFramework) == 'net6'">
     <!-- Xbox Game Pass PC version of the game -->
     <BuildForWindowsStore>false</BuildForWindowsStore>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -32,9 +32,9 @@
   <!-- Development Variables -->
   <PropertyGroup>
     <HarmonyVersion>2.2.2</HarmonyVersion>
-    <UIExtenderExVersion>2.8.1</UIExtenderExVersion>
-    <ButterLibVersion>2.8.15</ButterLibVersion>
-    <MCMVersion>5.9.2</MCMVersion>
+    <UIExtenderExVersion>2.8.0</UIExtenderExVersion>
+    <ButterLibVersion>2.8.11</ButterLibVersion>
+    <MCMVersion>5.9.1</MCMVersion>
     <HarmonyExtensionsVersion>3.2.0.77</HarmonyExtensionsVersion>
     <!--
     <BUTRSharedVersion>3.0.0.135</BUTRSharedVersion>

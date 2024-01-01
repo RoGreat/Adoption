@@ -6,7 +6,7 @@ using TaleWorlds.MountAndBlade;
 
 namespace Adoption
 {
-    public class AdoptionSubModule : MBSubModuleBase
+    public class SubModule : MBSubModuleBase
     {
         protected override void InitializeGameStarter(Game game, IGameStarter gameStarterObject)
         {
