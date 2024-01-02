@@ -3,17 +3,19 @@ using HarmonyLib.BUTR.Extensions;
 
 using Helpers;
 
-using TaleWorlds.CampaignSystem;
-using TaleWorlds.Core;
-using TaleWorlds.Library;
-using TaleWorlds.Localization;
-using TaleWorlds.MountAndBlade;
+using MCM;
 
 using SandBox;
 using SandBox.Conversation;
 using SandBox.Missions.AgentBehaviors;
 
-using MCM;
+using System.Collections.Generic;
+
+using TaleWorlds.CampaignSystem;
+using TaleWorlds.Core;
+using TaleWorlds.Library;
+using TaleWorlds.Localization;
+using TaleWorlds.MountAndBlade;
 
 namespace Adoption.Behaviors
 {
@@ -28,6 +30,16 @@ namespace Adoption.Behaviors
         private static readonly SetHeroStaticBodyPropertiesDelegate? SetHeroStaticBodyProperties = AccessTools2.GetPropertySetterDelegate<SetHeroStaticBodyPropertiesDelegate>(typeof(Hero), "StaticBodyProperties");
 
         private Settings? Settings => GetCampaignBehavior<SettingsProviderCampaignBehavior>() is { } behavior ? behavior.Get<Settings>() : null;
+
+        private readonly Dictionary<Agent, AdoptionState> _previousAdoptionAttempts = new();
+
+        private enum AdoptionState
+        {
+            Ended = -1,
+            Untested,
+            CanAdopt,
+            Adopted,
+        }
 
         public override void RegisterEvents()
         {
@@ -54,14 +66,12 @@ namespace Adoption.Behaviors
                 "adoption_discussion",
                 "town_or_village_children_player_no_rhyme", "adoption_child",
                 "{=Sm4JdIxx}I can tell you have no parents to go back to child. I can be your {?PLAYER.GENDER}mother{?}father{\\?} if that is the case.",
-                conversation_adopt_child_on_condition, null,
-                120);
+                conversation_adopt_child_on_condition, null, 120);
             starter.AddDialogLine(
                 "character_adoption_response",
                 "adoption_child", "close_window",
                 "{=P2m6bJg6}You want to be my {?PLAYER.GENDER}mom{?}dad{\\?}? Okay then![rf:happy][rb:very_positive]",
-                null, conversation_adopt_child_on_consequence,
-                100);
+                null, conversation_adopt_child_on_consequence, 100);
         }
 
         protected void AddTeenagerDialogs(CampaignGameStarter starter)
@@ -70,35 +80,61 @@ namespace Adoption.Behaviors
                 "adoption_discussion",
                 "town_or_village_player", "adoption_teen",
                 "{=Na4j2oGk}Do you not have any parents to take care of you young {?CONVERSATION_CHARACTER.GENDER}woman{?}man{\\?}? You are welcome to be a part of my family.",
-                conversation_adopt_teenager_on_condition, null,
-                120);
+                conversation_adopt_child_on_condition, null, 120);
             starter.AddDialogLine(
                 "character_adoption_response",
                 "adoption_teen", "close_window",
                 "{=NoHJAxWx}Thanks for allowing me to be a part of your family {?PLAYER.GENDER}madam{?}sir{\\?}. I gratefully accept![rf:happy][rb:very_positive]",
-                null, conversation_adopt_child_on_consequence,
-                100);
+                null, conversation_adopt_child_on_consequence, 100);
         }
 
         private bool conversation_adopt_child_on_condition()
         {
-            return conversationAdoptionDialog();
-        }
-
-        private bool conversation_adopt_teenager_on_condition()
-        {
-            return conversationAdoptionDialog();
-        }
-
-        private bool conversationAdoptionDialog()
-        {
             Agent agent = (Agent)Campaign.Current.ConversationManager.OneToOneConversationAgent;
 
-            if (agent.Age < Campaign.Current.Models.AgeModel.HeroComesOfAge)
+            AdoptionState adoptionState;
+            if (!_previousAdoptionAttempts.TryGetValue(agent, out adoptionState))
             {
-                return true;
+                _previousAdoptionAttempts.Add(agent, AdoptionState.Untested);
             }
 
+            if (adoptionState == AdoptionState.CanAdopt)
+            {
+                Debug.Print($"Can adopt {agent}");
+                return true;
+            }
+            if (adoptionState == AdoptionState.Ended || adoptionState == AdoptionState.Adopted)
+            {
+                Debug.Print($"Cannot adopt {agent}");
+                return false;
+            }
+
+            // TODO: uncomment age flag
+            //if (agent.Age < Campaign.Current.Models.AgeModel.HeroComesOfAge)
+            //{
+                double adoptionChance = Settings?.AdoptionChance ?? 0.25;
+
+                Debug.Print($"Adoption chance: {adoptionChance}");
+               
+                float random = MBRandom.RandomFloat;
+                Debug.Print($"Random number: {random}");
+
+                if (random < adoptionChance)
+                {
+                    Debug.Print($"Can adopt {agent}");
+                    _previousAdoptionAttempts[agent] = AdoptionState.CanAdopt;
+
+                return true;
+                }
+                else
+                {
+                    Debug.Print($"Cannot adopt {agent}");
+                    _previousAdoptionAttempts[agent] = AdoptionState.Ended;
+                }
+                return false;
+            //}
+
+            // TODO: change this back to false
             return true;
         }
 
