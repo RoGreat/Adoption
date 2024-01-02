@@ -3,14 +3,11 @@ using HarmonyLib.BUTR.Extensions;
 
 using Helpers;
 
-using MCM;
-
 using SandBox;
 using SandBox.Conversation;
 using SandBox.Missions.AgentBehaviors;
 
 using System.Collections.Generic;
-
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
@@ -28,8 +25,6 @@ namespace Adoption.Behaviors
 
         private delegate void SetHeroStaticBodyPropertiesDelegate(Hero instance, StaticBodyProperties @value);
         private static readonly SetHeroStaticBodyPropertiesDelegate? SetHeroStaticBodyProperties = AccessTools2.GetPropertySetterDelegate<SetHeroStaticBodyPropertiesDelegate>(typeof(Hero), "StaticBodyProperties");
-
-        private Settings? Settings => GetCampaignBehavior<SettingsProviderCampaignBehavior>() is { } behavior ? behavior.Get<Settings>() : null;
 
         private readonly Dictionary<Agent, AdoptionState> _previousAdoptionAttempts = new();
 
@@ -112,7 +107,7 @@ namespace Adoption.Behaviors
             // TODO: uncomment age flag
             //if (agent.Age < Campaign.Current.Models.AgeModel.HeroComesOfAge)
             //{
-                double adoptionChance = Settings?.AdoptionChance ?? 0.25;
+                double adoptionChance = Settings.Instance!.AdoptionChance;
 
                 Debug.Print($"Adoption chance: {adoptionChance}");
                
@@ -134,8 +129,7 @@ namespace Adoption.Behaviors
                 return false;
             //}
 
-            // TODO: change this back to false
-            return true;
+            return false;
         }
 
         private void conversation_adopt_child_on_consequence()
@@ -161,6 +155,13 @@ namespace Adoption.Behaviors
 
         public void ResetAdoptionAttempts()
         {
+            foreach (var pair in _previousAdoptionAttempts)
+            {
+                if (_previousAdoptionAttempts[pair.Key] == AdoptionState.Ended)
+                {
+                    _previousAdoptionAttempts[pair.Key] = AdoptionState.Untested;
+                }
+            }
         }
     }
 }

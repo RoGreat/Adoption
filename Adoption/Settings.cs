@@ -1,5 +1,4 @@
 ﻿using Adoption.Behaviors;
-
 using MCM.Abstractions.Attributes.v2;
 using MCM.Abstractions.Base.Global;
 
@@ -20,11 +19,11 @@ namespace Adoption
             { "VERSION", typeof(Settings).Assembly.GetName().Version?.ToString(3) ?? "ERROR" }
         }).ToString();
 
-        [SettingPropertyFloatingInteger("{=TRLkkn8V}Adoption Chance", 0f, 1f, "#0%", RequireRestart = false, Order = 1, HintText = "{=zqWrjVgu}Chance that a child is up for adoption.")]
-        public float AdoptionChance { get; set; } = 1f;
+        [SettingPropertyFloatingInteger("{=TRLkkn8V}Adoption Chance", 0f, 1f, "#0%", RequireRestart = false, Order = 0, HintText = "{=zqWrjVgu}Chance that a child is up for adoption.")]
+        public float AdoptionChance { get; set; } = 0.5f;
 
-        [SettingPropertyButton("{=zSklyZ76}Reset Adoption Attempts", Content = "{=Z3WQjWfW}Reset", Order = 2, RequireRestart = false)]
-        public Action ResetAdoptionAttempts { get; set; } = () => Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>().ResetAdoptionAttempts();
+        [SettingPropertyButton("{=zSklyZ76}Reset Adoption Attempts", Content = "{=Z3WQjWfW}Reset", Order = 1, RequireRestart = false)]
+        public Action ResetAdoptionAttempts { get; set; } = () => Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>()?.ResetAdoptionAttempts();
 
     }
 }
