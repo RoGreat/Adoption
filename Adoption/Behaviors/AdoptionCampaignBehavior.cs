@@ -1,5 +1,4 @@
-﻿using HarmonyLib;
-using HarmonyLib.BUTR.Extensions;
+﻿using HarmonyLib.BUTR.Extensions;
 
 using Helpers;
 
@@ -7,22 +6,24 @@ using SandBox;
 using SandBox.Conversation;
 using SandBox.Missions.AgentBehaviors;
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
+
 using TaleWorlds.CampaignSystem;
+using TaleWorlds.CampaignSystem.Actions;
+using TaleWorlds.CampaignSystem.CharacterDevelopment;
+using TaleWorlds.CampaignSystem.Extensions;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.Localization;
 using TaleWorlds.MountAndBlade;
+using TaleWorlds.TwoDimension;
 
 namespace Adoption.Behaviors
 {
     public class AdoptionCampaignBehavior : CampaignBehaviorBase
     {
-        private static readonly AccessTools.FieldRef<Agent, TextObject>? AgentName = AccessTools2.FieldRefAccess<Agent, TextObject>("_name");
-
-        private delegate void SetHeroObjectDelegate(CharacterObject instance, Hero @value);
-        private static readonly SetHeroObjectDelegate? SetHeroObject = AccessTools2.GetPropertySetterDelegate<SetHeroObjectDelegate>(typeof(CharacterObject), "HeroObject");
-
         private delegate void SetHeroStaticBodyPropertiesDelegate(Hero instance, StaticBodyProperties @value);
         private static readonly SetHeroStaticBodyPropertiesDelegate? SetHeroStaticBodyProperties = AccessTools2.GetPropertySetterDelegate<SetHeroStaticBodyPropertiesDelegate>(typeof(Hero), "StaticBodyProperties");
 
@@ -87,28 +88,24 @@ namespace Adoption.Behaviors
         {
             Agent agent = (Agent)Campaign.Current.ConversationManager.OneToOneConversationAgent;
 
-            AdoptionState adoptionState;
-            if (!_previousAdoptionAttempts.TryGetValue(agent, out adoptionState))
+            if (agent.Age < Campaign.Current.Models.AgeModel.HeroComesOfAge)
             {
-                _previousAdoptionAttempts.Add(agent, AdoptionState.Untested);
-            }
+                AdoptionState adoptionState;
+                if (!_previousAdoptionAttempts.TryGetValue(agent, out adoptionState))
+                {
+                    _previousAdoptionAttempts.Add(agent, AdoptionState.Untested);
+                }
 
-            if (adoptionState == AdoptionState.CanAdopt)
-            {
-                Debug.Print($"Can adopt {agent}");
-                return true;
-            }
-            if (adoptionState == AdoptionState.Ended || adoptionState == AdoptionState.Adopted)
-            {
-                Debug.Print($"Cannot adopt {agent}");
-                return false;
-            }
+                if (adoptionState == AdoptionState.CanAdopt)
+                {
+                    return true;
+                }
+                if (adoptionState == AdoptionState.Ended || adoptionState == AdoptionState.Adopted)
+                {
+                    return false;
+                }
 
-            // TODO: uncomment age flag
-            //if (agent.Age < Campaign.Current.Models.AgeModel.HeroComesOfAge)
-            //{
                 double adoptionChance = Settings.Instance!.AdoptionChance;
-
                 Debug.Print($"Adoption chance: {adoptionChance}");
                
                 float random = MBRandom.RandomFloat;
@@ -118,44 +115,157 @@ namespace Adoption.Behaviors
                 {
                     Debug.Print($"Can adopt {agent}");
                     _previousAdoptionAttempts[agent] = AdoptionState.CanAdopt;
-
-                return true;
+                    return true;
                 }
                 else
                 {
                     Debug.Print($"Cannot adopt {agent}");
                     _previousAdoptionAttempts[agent] = AdoptionState.Ended;
                 }
-                return false;
-            //}
-
+            }
             return false;
         }
 
         private void conversation_adopt_child_on_consequence()
         {
+            Agent agent = (Agent)Campaign.Current.ConversationManager.OneToOneConversationAgent;
+            CharacterObject character = Campaign.Current.ConversationManager.OneToOneConversationCharacter;
+
+            int becomeChildAge = Campaign.Current.Models.AgeModel.BecomeChildAge;
+            int heroComesOfAge = Campaign.Current.Models.AgeModel.HeroComesOfAge;
+
+            _previousAdoptionAttempts[agent] = AdoptionState.Adopted;
+
+            RemoveUnneededAdoptionAttempts();
+
+            // Create hero object for agent
+            Hero hero = HeroCreator.CreateSpecialHero(character, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, (int)Mathf.Clamp(agent.Age, becomeChildAge, heroComesOfAge));
+
+            // Parent assignment
+            if (Hero.MainHero.IsFemale)
+            {
+                hero.Mother = Hero.MainHero;
+            }
+            else
+            {
+                hero.Father = Hero.MainHero;
+            }
+            CreateRandomDeceasedParent(hero);
+            Hero mother = hero.Mother;
+            Hero father = hero.Father;
+
+            // Traits (DeliverOffspring)
+            hero.ClearTraits();
+            float randomFloat = MBRandom.RandomFloat;
+            int num;
+            if ((double)randomFloat < 0.1)
+            {
+                num = 0;
+            }
+            else if ((double)randomFloat < 0.5)
+            {
+                num = 1;
+            }
+            else if ((double)randomFloat < 0.9)
+            {
+                num = 2;
+            }
+            else
+            {
+                num = 3;
+            }
+            List<TraitObject> list = DefaultTraits.Personality.ToList();
+            list.Shuffle();
+            for (int i = 0; i < Math.Min(list.Count, num); i++)
+            {
+                int num2 = (((double)MBRandom.RandomFloat < 0.5) ? MBRandom.RandomInt(list[i].MinValue, 0) : MBRandom.RandomInt(1, list[i].MaxValue + 1));
+                hero.SetTraitLevel(list[i], num2);
+            }
+            foreach (TraitObject traitObject in TraitObject.All.Except(DefaultTraits.Personality))
+            {
+                hero.SetTraitLevel(traitObject, ((double)MBRandom.RandomFloat < 0.5) ? mother.GetTraitLevel(traitObject) : father.GetTraitLevel(traitObject));
+            }
+
+            // Encyclopedia
+            hero.SetNewOccupation(Occupation.Lord);
+            hero.SetHasMet();
+            hero.UpdateHomeSettlement();
+            hero.HeroDeveloper.InitializeHeroDeveloper(true, null);
+
+            // GetEquipmentRostersForInitialChildrenGeneration uses different equipment templates depending on age
+            MBEquipmentRoster randomElementInefficiently = Campaign.Current.Models.EquipmentSelectionModel.GetEquipmentRostersForInitialChildrenGeneration(hero).GetRandomElementInefficiently();
+            if (randomElementInefficiently != null)
+            {
+                Equipment randomCivilianEquipment = randomElementInefficiently.GetRandomCivilianEquipment();
+                EquipmentHelper.AssignHeroEquipmentFromEquipment(hero, randomCivilianEquipment);
+                Equipment equipment = new(false);
+                equipment.FillFrom(randomCivilianEquipment, false);
+                EquipmentHelper.AssignHeroEquipmentFromEquipment(hero, equipment);
+            }
+
+            // Appearance
+            SetHeroStaticBodyProperties!(hero, agent.BodyPropertiesValue.StaticProperties);
+
+            // Notification of adoption
+            OnHeroAdopted(Hero.MainHero, hero);
+
+            // Agent will follow the adopter
+            Campaign.Current.ConversationManager.ConversationEndOneShot += FollowMainAgent;
+        }
+
+        private void CreateRandomDeceasedParent(Hero hero)
+        {
+            int heroComesOfAge = Campaign.Current.Models.AgeModel.HeroComesOfAge;
+            int age = MBRandom.RandomInt(heroComesOfAge + (int)hero.Age, heroComesOfAge * 2 + (int)hero.Age);
+            CharacterObject randomElementWithPredicate;
+
+            if (Hero.MainHero.IsFemale)
+            {
+                randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && !x.IsFemale);
+                hero.Father = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, age);
+                hero.Father.CharacterObject.HiddenInEncylopedia = true;
+                KillCharacterAction.ApplyByRemove(hero.Father);
+            }
+            else
+            {
+                randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && x.IsFemale);
+                hero.Mother = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, age);
+                hero.Mother.CharacterObject.HiddenInEncylopedia = true;
+                KillCharacterAction.ApplyByRemove(hero.Mother);
+            }
+        }
+
+        private void RemoveUnneededAdoptionAttempts()
+        {
+            foreach (var pair in _previousAdoptionAttempts.ToList())
+            {
+                if (!Mission.Current.Agents.Contains(pair.Key))
+                {
+                    _previousAdoptionAttempts.Remove(pair.Key);
+                }
+            }
         }
 
         private void FollowMainAgent()
         {
             DailyBehaviorGroup behaviorGroup = ConversationMission.OneToOneConversationAgent.GetComponent<CampaignAgentComponent>().AgentNavigator.GetBehaviorGroup<DailyBehaviorGroup>();
-
-            behaviorGroup.AddBehavior<FollowAgentBehavior>().SetTargetAgent(Agent.Main);
+            FollowAgentBehavior followAgentBehavior = behaviorGroup.AddBehavior<FollowAgentBehavior>();
             behaviorGroup.SetScriptedBehavior<FollowAgentBehavior>();
+            followAgentBehavior.SetTargetAgent(Agent.Main);
         }
 
         private void OnHeroAdopted(Hero adopter, Hero adoptedHero)
         {
             TextObject text = new("{=DjzDTNHw}{ADOPTER.LINK} adopted {ADOPTED_HERO.LINK}.");
-            text.SetTextVariable("ADOPTER", adopter.Name)
-                .SetTextVariable("ADOPTED_HERO", adoptedHero.Name);
+            StringHelpers.SetCharacterProperties("ADOPTER", adopter.CharacterObject, text);
+            StringHelpers.SetCharacterProperties("ADOPTED_HERO", adoptedHero.CharacterObject, text);
 
             InformationManager.DisplayMessage(new(text.ToString()));
         }
 
         public void ResetAdoptionAttempts()
         {
-            foreach (var pair in _previousAdoptionAttempts)
+            foreach (var pair in _previousAdoptionAttempts.ToList())
             {
                 if (_previousAdoptionAttempts[pair.Key] == AdoptionState.Ended)
                 {
