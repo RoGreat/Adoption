@@ -19,7 +19,6 @@ using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.Localization;
 using TaleWorlds.MountAndBlade;
-using TaleWorlds.TwoDimension;
 
 namespace Adoption.CampaignBehaviors
 {
@@ -111,7 +110,7 @@ namespace Adoption.CampaignBehaviors
                 return false;
             }
 
-            double adoptionChance = Settings.Instance!.AdoptionChance;
+            float adoptionChance = Settings.Instance!.AdoptionChance;
             Debug.Print($"Adoption chance: {adoptionChance}");
                
             float random = MBRandom.RandomFloat;
@@ -136,15 +135,25 @@ namespace Adoption.CampaignBehaviors
             Agent agent = (Agent)Campaign.Current.ConversationManager.OneToOneConversationAgent;
             CharacterObject character = Campaign.Current.ConversationManager.OneToOneConversationCharacter;
 
-            int becomeChildAge = Campaign.Current.Models.AgeModel.BecomeChildAge;
-            int heroComesOfAge = Campaign.Current.Models.AgeModel.HeroComesOfAge;
-
             _previousAdoptionAttempts[agent] = AdoptionState.Adopted;
 
-            // Create hero object for agent
+            // Create hero object from character
             Settlement settlement = Hero.MainHero.CurrentSettlement;
-            Hero hero = HeroCreator.CreateSpecialHero(character, settlement, Clan.PlayerClan, null, (int)Mathf.Clamp(agent.Age, becomeChildAge, heroComesOfAge));
+            int age = MBMath.ClampInt((int)agent.Age, Campaign.Current.Models.AgeModel.BecomeChildAge, Campaign.Current.Models.AgeModel.HeroComesOfAge);
+            Hero hero = HeroCreator.CreateSpecialHero(character, settlement, Clan.PlayerClan, null, age);
+            CreateAdoptedHero(hero, settlement);
 
+            // Copy appearance from agent
+            SetHeroStaticBodyProperties!(hero, agent.BodyPropertiesValue.StaticProperties);
+            hero.Weight = agent.BodyPropertiesValue.Weight;
+            hero.Build = agent.BodyPropertiesValue.Build;
+
+            // Agent follows player character
+            Campaign.Current.ConversationManager.ConversationEndOneShot += FollowMainAgent;
+        }
+
+        public void CreateAdoptedHero(Hero hero, Settlement settlement)
+        {
             // Parent assignments
             if (Hero.MainHero.IsFemale)
             {
@@ -155,10 +164,37 @@ namespace Adoption.CampaignBehaviors
                 hero.Father = Hero.MainHero;
             }
             CreateRandomLostParent(hero, settlement);
-            Hero mother = hero.Mother;
-            Hero father = hero.Father;
+            // Traits derived from DeliverOffSpring method
+            LordTraits(hero, hero.Mother, hero.Father);
 
-            // Traits from DeliverOffspring method
+            // Common updates after creating hero
+            hero.SetNewOccupation(Occupation.Lord);
+            hero.UpdateHomeSettlement();
+            hero.HeroDeveloper.InitializeHeroDeveloper(true, null);
+            // Equipment derived from OnNewGameCreatedPartialFollowUp
+            EquipmentForChild(hero);
+
+            // Notification of adoption
+            OnHeroAdopted(Hero.MainHero, hero);
+        }
+
+        public void EquipmentForChild(Hero hero)
+        {
+
+            // GetEquipmentRostersForInitialChildrenGeneration uses different equipment templates depending on if they are a child or teenager
+            MBEquipmentRoster randomElementInefficiently = Campaign.Current.Models.EquipmentSelectionModel.GetEquipmentRostersForInitialChildrenGeneration(hero).GetRandomElementInefficiently();
+            if (randomElementInefficiently is not null)
+            {
+                Equipment randomCivilianEquipment = randomElementInefficiently.GetRandomCivilianEquipment();
+                EquipmentHelper.AssignHeroEquipmentFromEquipment(hero, randomCivilianEquipment);
+                Equipment equipment = new(false);
+                equipment.FillFrom(randomCivilianEquipment, false);
+                EquipmentHelper.AssignHeroEquipmentFromEquipment(hero, equipment);
+            }
+        }
+
+        public void LordTraits(Hero hero, Hero mother, Hero father)
+        {
             hero.ClearTraits();
             float randomFloat = MBRandom.RandomFloat;
             int num;
@@ -189,34 +225,6 @@ namespace Adoption.CampaignBehaviors
             {
                 hero.SetTraitLevel(traitObject, ((double)MBRandom.RandomFloat < 0.5) ? mother.GetTraitLevel(traitObject) : father.GetTraitLevel(traitObject));
             }
-
-            // Common updates after creating hero
-            hero.SetNewOccupation(Occupation.Lord);
-            hero.ChangeState(Hero.CharacterStates.Active);
-            hero.UpdateHomeSettlement();
-            hero.HeroDeveloper.InitializeHeroDeveloper(true, null);
-
-            // GetEquipmentRostersForInitialChildrenGeneration uses different equipment templates depending on age
-            MBEquipmentRoster randomElementInefficiently = Campaign.Current.Models.EquipmentSelectionModel.GetEquipmentRostersForInitialChildrenGeneration(hero).GetRandomElementInefficiently();
-            if (randomElementInefficiently is not null)
-            {
-                Equipment randomCivilianEquipment = randomElementInefficiently.GetRandomCivilianEquipment();
-                EquipmentHelper.AssignHeroEquipmentFromEquipment(hero, randomCivilianEquipment);
-                Equipment equipment = new(false);
-                equipment.FillFrom(randomCivilianEquipment, false);
-                EquipmentHelper.AssignHeroEquipmentFromEquipment(hero, equipment);
-            }
-
-            // Appearance
-            SetHeroStaticBodyProperties!(hero, agent.BodyPropertiesValue.StaticProperties);
-            hero.Weight = agent.BodyPropertiesValue.Weight;
-            hero.Build = agent.BodyPropertiesValue.Build;
-
-            // Notification of adoption
-            OnHeroAdopted(Hero.MainHero, hero);
-
-            // Agent will follow the adopter
-            Campaign.Current.ConversationManager.ConversationEndOneShot += FollowMainAgent;
         }
 
         public void CreateRandomLostParent(Hero hero, Settlement settlement)
