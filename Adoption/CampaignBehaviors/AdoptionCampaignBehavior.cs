@@ -192,7 +192,6 @@ namespace Adoption.CampaignBehaviors
 
             // Common updates after creating hero
             hero.SetNewOccupation(Occupation.Lord);
-            hero.SetHasMet();
             hero.ChangeState(Hero.CharacterStates.Active);
             hero.UpdateHomeSettlement();
             hero.HeroDeveloper.InitializeHeroDeveloper(true, null);

@@ -92,8 +92,8 @@ namespace Adoption
                 return "Can not find Adoption Campaign Behavior!";
             }
 
+            // Create hero from child character templates
             Settlement settlement = SettlementHelper.GetRandomTown();
-
             int age = MBRandom.RandomInt(Campaign.Current.Models.AgeModel.BecomeChildAge, Campaign.Current.Models.AgeModel.HeroComesOfAge);
             List<CharacterObject> character = new()
             {
@@ -149,7 +149,6 @@ namespace Adoption
 
             // Common updates after creating hero
             hero.SetNewOccupation(Occupation.Lord);
-            hero.SetHasMet();
             hero.ChangeState(Hero.CharacterStates.Active);
             hero.UpdateHomeSettlement();
             hero.HeroDeveloper.InitializeHeroDeveloper(true, null);
