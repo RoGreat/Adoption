@@ -1,8 +1,16 @@
-﻿using Adoption.Behaviors;
+﻿using Adoption.CampaignBehaviors;
 
+using Helpers;
+
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using TaleWorlds.CampaignSystem;
+using TaleWorlds.CampaignSystem.CharacterDevelopment;
+using TaleWorlds.CampaignSystem.Extensions;
+using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.Core;
 using TaleWorlds.Library;
 
 namespace Adoption
@@ -14,7 +22,7 @@ namespace Adoption
         {
             if (CampaignCheats.CheckParameters(strings, 0) && !CampaignCheats.CheckHelp(strings))
             {
-                Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>().ResetAdoptionAttempts();
+                Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>()?.ResetAdoptionAttempts();
                 return "Success";
             }
             return "Format is \"adoption.reset_adoption_attempts\"";
@@ -23,17 +31,128 @@ namespace Adoption
         [CommandLineFunctionality.CommandLineArgumentFunction("set_adoption_chance", "adoption")]
         public static string SetAdoptionChance(List<string> strings)
         {
-            Settings settings = new();
             if (CampaignCheats.CheckParameters(strings, 0) || CampaignCheats.CheckHelp(strings))
             {
                 return "Format is \"adoption.set_adoption_chance [0-1]\".";
             }
             if (float.TryParse(strings[0], out float num) && num >= 0f && num <= 1f)
             {
-                settings.AdoptionChance = num;
+                Settings.Instance!.AdoptionChance = num;
                 return "Success";
             }
             return "Format is \"adoption.set_adoption_chance [0-1]\".";
+        }
+
+        [CommandLineFunctionality.CommandLineArgumentFunction("adopt_children", "adoption")]
+        public static string AdoptChildren(List<string> strings)
+        {
+            if (!CampaignCheats.CheckCheatUsage(ref CampaignCheats.ErrorType))
+            {
+                return CampaignCheats.ErrorType;
+            }
+            string text = "Format is \"adoption.adopt_children [Number]\".";
+            if (!CampaignCheats.CheckParameters(strings, 1) || CampaignCheats.CheckHelp(strings))
+            {
+                return text;
+            }
+            if (!int.TryParse(strings[0], out int num))
+            {
+                return "Invalid number.\n" + text;
+            }
+            if (num <= 0)
+            {
+                return "Please enter a positive number\n" + text;
+            }
+            for (int i = 0; i < num; i++)
+            {
+                AdoptChild(new List<string>());
+            }
+            return "Success";
+        }
+
+        [CommandLineFunctionality.CommandLineArgumentFunction("adopt_child", "adoption")]
+        public static string AdoptChild(List<string> strings)
+        {
+            if (!CampaignCheats.CheckCheatUsage(ref CampaignCheats.ErrorType))
+            {
+                return CampaignCheats.ErrorType;
+            }
+            if (!CampaignCheats.CheckParameters(strings, 0) || CampaignCheats.CheckHelp(strings))
+            {
+                return "Format is \"adoption.adopt_child\".";
+            }
+            int age = MBRandom.RandomInt(Campaign.Current.Models.AgeModel.BecomeChildAge, Campaign.Current.Models.AgeModel.HeroComesOfAge);
+
+            CharacterObject lord = CharacterObject.PlayerCharacter.Culture.LordTemplates.GetRandomElement();
+            Settlement randomElementWithPredicate = Settlement.All.GetRandomElementWithPredicate((Settlement settlement) => settlement.Culture == lord.Culture && settlement.IsTown);
+            Hero hero = HeroCreator.CreateSpecialHero(lord, randomElementWithPredicate, Clan.PlayerClan, null, age);
+
+            // Parent assignments
+            if (Hero.MainHero.IsFemale)
+            {
+                hero.Mother = Hero.MainHero;
+            }
+            else
+            {
+                hero.Father = Hero.MainHero;
+            }
+            Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>()?.CreateRandomLostParent(hero);
+            Hero mother = hero.Mother;
+            Hero father = hero.Father;
+
+            // Traits from DeliverOffspring method
+            hero.ClearTraits();
+            float randomFloat = MBRandom.RandomFloat;
+            int num;
+            if ((double)randomFloat < 0.1)
+            {
+                num = 0;
+            }
+            else if ((double)randomFloat < 0.5)
+            {
+                num = 1;
+            }
+            else if ((double)randomFloat < 0.9)
+            {
+                num = 2;
+            }
+            else
+            {
+                num = 3;
+            }
+            List<TraitObject> list = DefaultTraits.Personality.ToList();
+            list.Shuffle();
+            for (int i = 0; i < Math.Min(list.Count, num); i++)
+            {
+                int num2 = ((double)MBRandom.RandomFloat < 0.5) ? MBRandom.RandomInt(list[i].MinValue, 0) : MBRandom.RandomInt(1, list[i].MaxValue + 1);
+                hero.SetTraitLevel(list[i], num2);
+            }
+            foreach (TraitObject traitObject in TraitObject.All.Except(DefaultTraits.Personality))
+            {
+                hero.SetTraitLevel(traitObject, ((double)MBRandom.RandomFloat < 0.5) ? mother.GetTraitLevel(traitObject) : father.GetTraitLevel(traitObject));
+            }
+
+            // Common updates after creating hero
+            hero.SetHasMet();
+            hero.ChangeState(Hero.CharacterStates.Active);
+            hero.UpdateHomeSettlement();
+            hero.HeroDeveloper.InitializeHeroDeveloper(true, null);
+
+            // GetEquipmentRostersForInitialChildrenGeneration uses different equipment templates depending on age
+            MBEquipmentRoster randomElementInefficiently = Campaign.Current.Models.EquipmentSelectionModel.GetEquipmentRostersForInitialChildrenGeneration(hero).GetRandomElementInefficiently();
+            if (randomElementInefficiently is not null)
+            {
+                Equipment randomCivilianEquipment = randomElementInefficiently.GetRandomCivilianEquipment();
+                EquipmentHelper.AssignHeroEquipmentFromEquipment(hero, randomCivilianEquipment);
+                Equipment equipment = new(false);
+                equipment.FillFrom(randomCivilianEquipment, false);
+                EquipmentHelper.AssignHeroEquipmentFromEquipment(hero, equipment);
+            }
+
+            // Notification of adoption
+            Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>()?.OnHeroAdopted(Hero.MainHero, hero);
+
+            return "child has been adopted.";
         }
     }
 }

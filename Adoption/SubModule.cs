@@ -1,4 +1,4 @@
-﻿using Adoption.Behaviors;
+﻿using Adoption.CampaignBehaviors;
 
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;

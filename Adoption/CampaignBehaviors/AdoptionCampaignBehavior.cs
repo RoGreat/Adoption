@@ -20,12 +20,12 @@ using TaleWorlds.Localization;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.TwoDimension;
 
-namespace Adoption.Behaviors
+namespace Adoption.CampaignBehaviors
 {
     public class AdoptionCampaignBehavior : CampaignBehaviorBase
     {
-        private delegate void SetHeroStaticBodyPropertiesDelegate(Hero instance, StaticBodyProperties @value);
-        private static readonly SetHeroStaticBodyPropertiesDelegate? SetHeroStaticBodyProperties = AccessTools2.GetPropertySetterDelegate<SetHeroStaticBodyPropertiesDelegate>(typeof(Hero), "StaticBodyProperties");
+        public delegate void SetHeroStaticBodyPropertiesDelegate(Hero instance, StaticBodyProperties @value);
+        public readonly SetHeroStaticBodyPropertiesDelegate? SetHeroStaticBodyProperties = AccessTools2.GetPropertySetterDelegate<SetHeroStaticBodyPropertiesDelegate>(typeof(Hero), "StaticBodyProperties");
 
         private readonly Dictionary<Agent, AdoptionState> _previousAdoptionAttempts = new();
 
@@ -52,9 +52,17 @@ namespace Adoption.Behaviors
 
         public void AddDialogs(CampaignGameStarter starter)
         {
+            //starter.AddDialogLine("set_vars", "start", "lord_intro", "{=!}Never see this", conversation_set_first_on_condition, null, 200);
             AddChildrenDialogs(starter);
             AddTeenagerDialogs(starter);
         }
+
+        //private bool conversation_set_first_on_condition()
+        //{
+        //    Hero hero = Hero.OneToOneConversationHero;
+        //    Hero mainHero = Hero.MainHero;
+        //    return false;
+        //}
 
         protected void AddChildrenDialogs(CampaignGameStarter starter)
         {
@@ -88,40 +96,44 @@ namespace Adoption.Behaviors
         {
             Agent agent = (Agent)Campaign.Current.ConversationManager.OneToOneConversationAgent;
 
-            if (agent.Age < Campaign.Current.Models.AgeModel.HeroComesOfAge)
+            if (agent.Age >= Campaign.Current.Models.AgeModel.HeroComesOfAge)
             {
-                AdoptionState adoptionState;
-                if (!_previousAdoptionAttempts.TryGetValue(agent, out adoptionState))
-                {
-                    _previousAdoptionAttempts.Add(agent, AdoptionState.Untested);
-                }
+                return false;
+            }
 
-                if (adoptionState == AdoptionState.CanAdopt)
-                {
-                    return true;
-                }
-                if (adoptionState == AdoptionState.Ended || adoptionState == AdoptionState.Adopted)
-                {
-                    return false;
-                }
+            if (!_previousAdoptionAttempts.TryGetValue(agent, out AdoptionState adoptionState))
+            {
+                // Clear out any old attempts
+                RemoveUnneededAdoptionAttempts();
 
-                double adoptionChance = Settings.Instance!.AdoptionChance;
-                Debug.Print($"Adoption chance: {adoptionChance}");
+                _previousAdoptionAttempts.Add(agent, AdoptionState.Untested);
+            }
+
+            if (adoptionState == AdoptionState.CanAdopt)
+            {
+                return true;
+            }
+            if (adoptionState == AdoptionState.Ended || adoptionState == AdoptionState.Adopted)
+            {
+                return false;
+            }
+
+            double adoptionChance = Settings.Instance!.AdoptionChance;
+            Debug.Print($"Adoption chance: {adoptionChance}");
                
-                float random = MBRandom.RandomFloat;
-                Debug.Print($"Random number: {random}");
+            float random = MBRandom.RandomFloat;
+            Debug.Print($"Random number: {random}");
 
-                if (random < adoptionChance)
-                {
-                    Debug.Print($"Can adopt {agent}");
-                    _previousAdoptionAttempts[agent] = AdoptionState.CanAdopt;
-                    return true;
-                }
-                else
-                {
-                    Debug.Print($"Cannot adopt {agent}");
-                    _previousAdoptionAttempts[agent] = AdoptionState.Ended;
-                }
+            if (random < adoptionChance)
+            {
+                Debug.Print($"Can adopt {agent}");
+                _previousAdoptionAttempts[agent] = AdoptionState.CanAdopt;
+                return true;
+            }
+            else
+            {
+                Debug.Print($"Cannot adopt {agent}");
+                _previousAdoptionAttempts[agent] = AdoptionState.Ended;
             }
             return false;
         }
@@ -136,12 +148,10 @@ namespace Adoption.Behaviors
 
             _previousAdoptionAttempts[agent] = AdoptionState.Adopted;
 
-            RemoveUnneededAdoptionAttempts();
-
             // Create hero object for agent
-            Hero hero = HeroCreator.CreateSpecialHero(character, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, (int)Mathf.Clamp(agent.Age, becomeChildAge, heroComesOfAge));
+            Hero hero = HeroCreator.CreateSpecialHero(character, Hero.MainHero.CurrentSettlement, Clan.PlayerClan, null, (int)Mathf.Clamp(agent.Age, becomeChildAge, heroComesOfAge));
 
-            // Parent assignment
+            // Parent assignments
             if (Hero.MainHero.IsFemale)
             {
                 hero.Mother = Hero.MainHero;
@@ -150,11 +160,11 @@ namespace Adoption.Behaviors
             {
                 hero.Father = Hero.MainHero;
             }
-            CreateRandomDeceasedParent(hero);
+            CreateRandomLostParent(hero);
             Hero mother = hero.Mother;
             Hero father = hero.Father;
 
-            // Traits (DeliverOffspring)
+            // Traits from DeliverOffspring method
             hero.ClearTraits();
             float randomFloat = MBRandom.RandomFloat;
             int num;
@@ -178,7 +188,7 @@ namespace Adoption.Behaviors
             list.Shuffle();
             for (int i = 0; i < Math.Min(list.Count, num); i++)
             {
-                int num2 = (((double)MBRandom.RandomFloat < 0.5) ? MBRandom.RandomInt(list[i].MinValue, 0) : MBRandom.RandomInt(1, list[i].MaxValue + 1));
+                int num2 = ((double)MBRandom.RandomFloat < 0.5) ? MBRandom.RandomInt(list[i].MinValue, 0) : MBRandom.RandomInt(1, list[i].MaxValue + 1);
                 hero.SetTraitLevel(list[i], num2);
             }
             foreach (TraitObject traitObject in TraitObject.All.Except(DefaultTraits.Personality))
@@ -186,15 +196,16 @@ namespace Adoption.Behaviors
                 hero.SetTraitLevel(traitObject, ((double)MBRandom.RandomFloat < 0.5) ? mother.GetTraitLevel(traitObject) : father.GetTraitLevel(traitObject));
             }
 
-            // Encyclopedia
+            // Common updates after creating hero
             hero.SetNewOccupation(Occupation.Lord);
             hero.SetHasMet();
+            hero.ChangeState(Hero.CharacterStates.Active);
             hero.UpdateHomeSettlement();
             hero.HeroDeveloper.InitializeHeroDeveloper(true, null);
 
             // GetEquipmentRostersForInitialChildrenGeneration uses different equipment templates depending on age
             MBEquipmentRoster randomElementInefficiently = Campaign.Current.Models.EquipmentSelectionModel.GetEquipmentRostersForInitialChildrenGeneration(hero).GetRandomElementInefficiently();
-            if (randomElementInefficiently != null)
+            if (randomElementInefficiently is not null)
             {
                 Equipment randomCivilianEquipment = randomElementInefficiently.GetRandomCivilianEquipment();
                 EquipmentHelper.AssignHeroEquipmentFromEquipment(hero, randomCivilianEquipment);
@@ -205,6 +216,8 @@ namespace Adoption.Behaviors
 
             // Appearance
             SetHeroStaticBodyProperties!(hero, agent.BodyPropertiesValue.StaticProperties);
+            hero.Weight = agent.BodyPropertiesValue.Weight;
+            hero.Build = agent.BodyPropertiesValue.Build;
 
             // Notification of adoption
             OnHeroAdopted(Hero.MainHero, hero);
@@ -213,7 +226,7 @@ namespace Adoption.Behaviors
             Campaign.Current.ConversationManager.ConversationEndOneShot += FollowMainAgent;
         }
 
-        private void CreateRandomDeceasedParent(Hero hero)
+        public void CreateRandomLostParent(Hero hero)
         {
             int heroComesOfAge = Campaign.Current.Models.AgeModel.HeroComesOfAge;
             int age = MBRandom.RandomInt(heroComesOfAge + (int)hero.Age, heroComesOfAge * 2 + (int)hero.Age);
@@ -221,21 +234,21 @@ namespace Adoption.Behaviors
 
             if (Hero.MainHero.IsFemale)
             {
-                randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && !x.IsFemale);
-                hero.Father = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, age);
+                randomElementWithPredicate = hero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && !x.IsFemale);
+                hero.Father = HeroCreator.CreateSpecialHero(randomElementWithPredicate, hero.CurrentSettlement, null, null, age);
                 hero.Father.CharacterObject.HiddenInEncylopedia = true;
                 KillCharacterAction.ApplyByRemove(hero.Father);
             }
             else
             {
-                randomElementWithPredicate = Hero.MainHero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && x.IsFemale);
-                hero.Mother = HeroCreator.CreateSpecialHero(randomElementWithPredicate, Hero.MainHero.CurrentSettlement, Hero.MainHero.Clan, null, age);
+                randomElementWithPredicate = hero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && x.IsFemale);
+                hero.Mother = HeroCreator.CreateSpecialHero(randomElementWithPredicate, hero.CurrentSettlement, null, null, age);
                 hero.Mother.CharacterObject.HiddenInEncylopedia = true;
                 KillCharacterAction.ApplyByRemove(hero.Mother);
             }
         }
 
-        private void RemoveUnneededAdoptionAttempts()
+        public void RemoveUnneededAdoptionAttempts()
         {
             foreach (var pair in _previousAdoptionAttempts.ToList())
             {
@@ -246,7 +259,7 @@ namespace Adoption.Behaviors
             }
         }
 
-        private void FollowMainAgent()
+        public void FollowMainAgent()
         {
             DailyBehaviorGroup behaviorGroup = ConversationMission.OneToOneConversationAgent.GetComponent<CampaignAgentComponent>().AgentNavigator.GetBehaviorGroup<DailyBehaviorGroup>();
             FollowAgentBehavior followAgentBehavior = behaviorGroup.AddBehavior<FollowAgentBehavior>();
@@ -254,7 +267,7 @@ namespace Adoption.Behaviors
             followAgentBehavior.SetTargetAgent(Agent.Main);
         }
 
-        private void OnHeroAdopted(Hero adopter, Hero adoptedHero)
+        public void OnHeroAdopted(Hero adopter, Hero adoptedHero)
         {
             TextObject text = new("{=DjzDTNHw}{ADOPTER.LINK} adopted {ADOPTED_HERO.LINK}.");
             StringHelpers.SetCharacterProperties("ADOPTER", adopter.CharacterObject, text);

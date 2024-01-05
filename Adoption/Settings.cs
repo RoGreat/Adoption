@@ -1,4 +1,5 @@
-﻿using Adoption.Behaviors;
+﻿using Adoption.CampaignBehaviors;
+
 using MCM.Abstractions.Attributes.v2;
 using MCM.Abstractions.Base.Global;
 
