@@ -10,6 +10,7 @@ using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.CharacterDevelopment;
 using TaleWorlds.CampaignSystem.Extensions;
 using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.CampaignSystem.ViewModelCollection.CharacterDeveloper;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 
@@ -22,7 +23,12 @@ namespace Adoption
         {
             if (CampaignCheats.CheckParameters(strings, 0) && !CampaignCheats.CheckHelp(strings))
             {
-                Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>()?.ResetAdoptionAttempts();
+                AdoptionCampaignBehavior campaignBehavior = Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>();
+                if (campaignBehavior is null)
+                {
+                    return "Can not find Adoption Campaign Behavior!";
+                }
+                campaignBehavior.ResetAdoptionAttempts();
                 return "Success";
             }
             return "Format is \"adoption.reset_adoption_attempts\"";
@@ -81,11 +87,21 @@ namespace Adoption
             {
                 return "Format is \"adoption.adopt_child\".";
             }
-            int age = MBRandom.RandomInt(Campaign.Current.Models.AgeModel.BecomeChildAge, Campaign.Current.Models.AgeModel.HeroComesOfAge);
+            AdoptionCampaignBehavior campaignBehavior = Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>();
+            if (campaignBehavior is null)
+            {
+                return "Can not find Adoption Campaign Behavior!";
+            }
 
-            CharacterObject lord = CharacterObject.PlayerCharacter.Culture.LordTemplates.GetRandomElement();
-            Settlement randomElementWithPredicate = Settlement.All.GetRandomElementWithPredicate((Settlement settlement) => settlement.Culture == lord.Culture && settlement.IsTown);
-            Hero hero = HeroCreator.CreateSpecialHero(lord, randomElementWithPredicate, Clan.PlayerClan, null, age);
+            Settlement settlement = SettlementHelper.GetRandomTown();
+
+            int age = MBRandom.RandomInt(Campaign.Current.Models.AgeModel.BecomeChildAge, Campaign.Current.Models.AgeModel.HeroComesOfAge);
+            List<CharacterObject> character = new()
+            {
+                settlement.Culture.VillagerMaleChild,
+                settlement.Culture.VillagerFemaleChild,
+            };
+            Hero hero = HeroCreator.CreateSpecialHero(character.GetRandomElement(), settlement, Clan.PlayerClan, null, age);
 
             // Parent assignments
             if (Hero.MainHero.IsFemale)
@@ -96,7 +112,7 @@ namespace Adoption
             {
                 hero.Father = Hero.MainHero;
             }
-            Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>()?.CreateRandomLostParent(hero);
+            campaignBehavior.CreateRandomLostParent(hero, settlement);
             Hero mother = hero.Mother;
             Hero father = hero.Father;
 
@@ -133,6 +149,7 @@ namespace Adoption
             }
 
             // Common updates after creating hero
+            hero.SetNewOccupation(Occupation.Lord);
             hero.SetHasMet();
             hero.ChangeState(Hero.CharacterStates.Active);
             hero.UpdateHomeSettlement();
@@ -150,7 +167,7 @@ namespace Adoption
             }
 
             // Notification of adoption
-            Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>()?.OnHeroAdopted(Hero.MainHero, hero);
+            Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>().OnHeroAdopted(Hero.MainHero, hero);
 
             return "child has been adopted.";
         }

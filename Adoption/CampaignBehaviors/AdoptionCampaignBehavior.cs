@@ -14,6 +14,7 @@ using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.CampaignSystem.CharacterDevelopment;
 using TaleWorlds.CampaignSystem.Extensions;
+using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.Localization;
@@ -149,7 +150,8 @@ namespace Adoption.CampaignBehaviors
             _previousAdoptionAttempts[agent] = AdoptionState.Adopted;
 
             // Create hero object for agent
-            Hero hero = HeroCreator.CreateSpecialHero(character, Hero.MainHero.CurrentSettlement, Clan.PlayerClan, null, (int)Mathf.Clamp(agent.Age, becomeChildAge, heroComesOfAge));
+            Settlement settlement = Hero.MainHero.CurrentSettlement;
+            Hero hero = HeroCreator.CreateSpecialHero(character, settlement, Clan.PlayerClan, null, (int)Mathf.Clamp(agent.Age, becomeChildAge, heroComesOfAge));
 
             // Parent assignments
             if (Hero.MainHero.IsFemale)
@@ -160,7 +162,7 @@ namespace Adoption.CampaignBehaviors
             {
                 hero.Father = Hero.MainHero;
             }
-            CreateRandomLostParent(hero);
+            CreateRandomLostParent(hero, settlement);
             Hero mother = hero.Mother;
             Hero father = hero.Father;
 
@@ -226,7 +228,7 @@ namespace Adoption.CampaignBehaviors
             Campaign.Current.ConversationManager.ConversationEndOneShot += FollowMainAgent;
         }
 
-        public void CreateRandomLostParent(Hero hero)
+        public void CreateRandomLostParent(Hero hero, Settlement settlement)
         {
             int heroComesOfAge = Campaign.Current.Models.AgeModel.HeroComesOfAge;
             int age = MBRandom.RandomInt(heroComesOfAge + (int)hero.Age, heroComesOfAge * 2 + (int)hero.Age);
@@ -234,14 +236,14 @@ namespace Adoption.CampaignBehaviors
 
             if (Hero.MainHero.IsFemale)
             {
-                randomElementWithPredicate = hero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && !x.IsFemale);
+                randomElementWithPredicate = settlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && !x.IsFemale);
                 hero.Father = HeroCreator.CreateSpecialHero(randomElementWithPredicate, hero.CurrentSettlement, null, null, age);
                 hero.Father.CharacterObject.HiddenInEncylopedia = true;
                 KillCharacterAction.ApplyByRemove(hero.Father);
             }
             else
             {
-                randomElementWithPredicate = hero.CurrentSettlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && x.IsFemale);
+                randomElementWithPredicate = settlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && x.IsFemale);
                 hero.Mother = HeroCreator.CreateSpecialHero(randomElementWithPredicate, hero.CurrentSettlement, null, null, age);
                 hero.Mother.CharacterObject.HiddenInEncylopedia = true;
                 KillCharacterAction.ApplyByRemove(hero.Mother);
