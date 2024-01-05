@@ -53,17 +53,9 @@ namespace Adoption.CampaignBehaviors
 
         public void AddDialogs(CampaignGameStarter starter)
         {
-            //starter.AddDialogLine("set_vars", "start", "lord_intro", "{=!}Never see this", conversation_set_first_on_condition, null, 200);
             AddChildrenDialogs(starter);
             AddTeenagerDialogs(starter);
         }
-
-        //private bool conversation_set_first_on_condition()
-        //{
-        //    Hero hero = Hero.OneToOneConversationHero;
-        //    Hero mainHero = Hero.MainHero;
-        //    return false;
-        //}
 
         protected void AddChildrenDialogs(CampaignGameStarter starter)
         {
