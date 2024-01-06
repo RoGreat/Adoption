@@ -6,18 +6,13 @@ using SandBox;
 using SandBox.Conversation;
 using SandBox.Missions.AgentBehaviors;
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.Actions;
-using TaleWorlds.CampaignSystem.CharacterDevelopment;
-using TaleWorlds.CampaignSystem.Extensions;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
-using TaleWorlds.Localization;
 using TaleWorlds.MountAndBlade;
 
 namespace Adoption.CampaignBehaviors
@@ -141,7 +136,7 @@ namespace Adoption.CampaignBehaviors
             Settlement settlement = Hero.MainHero.CurrentSettlement;
             int age = MBMath.ClampInt((int)agent.Age, Campaign.Current.Models.AgeModel.BecomeChildAge, Campaign.Current.Models.AgeModel.HeroComesOfAge);
             Hero hero = HeroCreator.CreateSpecialHero(character, settlement, Clan.PlayerClan, null, age);
-            CreateAdoptedHero(hero, settlement);
+            AdoptedHeroCreator.CreateAdoptedHero(hero, settlement);
 
             // Copy appearance from agent
             SetHeroStaticBodyProperties!(hero, agent.BodyPropertiesValue.StaticProperties);
@@ -150,103 +145,6 @@ namespace Adoption.CampaignBehaviors
 
             // Agent follows player character
             Campaign.Current.ConversationManager.ConversationEndOneShot += FollowMainAgent;
-        }
-
-        public void CreateAdoptedHero(Hero hero, Settlement settlement)
-        {
-            // Parent assignments
-            if (Hero.MainHero.IsFemale)
-            {
-                hero.Mother = Hero.MainHero;
-            }
-            else
-            {
-                hero.Father = Hero.MainHero;
-            }
-            CreateRandomLostParent(hero, settlement);
-            // Traits derived from DeliverOffSpring method
-            LordTraits(hero, hero.Mother, hero.Father);
-
-            // Common updates after creating hero
-            hero.SetNewOccupation(Occupation.Lord);
-            hero.UpdateHomeSettlement();
-            hero.HeroDeveloper.InitializeHeroDeveloper(true, null);
-            // Equipment derived from OnNewGameCreatedPartialFollowUp
-            EquipmentForChild(hero);
-
-            // Notification of adoption
-            OnHeroAdopted(Hero.MainHero, hero);
-        }
-
-        public void EquipmentForChild(Hero hero)
-        {
-
-            // GetEquipmentRostersForInitialChildrenGeneration uses different equipment templates depending on if they are a child or teenager
-            MBEquipmentRoster randomElementInefficiently = Campaign.Current.Models.EquipmentSelectionModel.GetEquipmentRostersForInitialChildrenGeneration(hero).GetRandomElementInefficiently();
-            if (randomElementInefficiently is not null)
-            {
-                Equipment randomCivilianEquipment = randomElementInefficiently.GetRandomCivilianEquipment();
-                EquipmentHelper.AssignHeroEquipmentFromEquipment(hero, randomCivilianEquipment);
-                Equipment equipment = new(false);
-                equipment.FillFrom(randomCivilianEquipment, false);
-                EquipmentHelper.AssignHeroEquipmentFromEquipment(hero, equipment);
-            }
-        }
-
-        public void LordTraits(Hero hero, Hero mother, Hero father)
-        {
-            hero.ClearTraits();
-            float randomFloat = MBRandom.RandomFloat;
-            int num;
-            if ((double)randomFloat < 0.1)
-            {
-                num = 0;
-            }
-            else if ((double)randomFloat < 0.5)
-            {
-                num = 1;
-            }
-            else if ((double)randomFloat < 0.9)
-            {
-                num = 2;
-            }
-            else
-            {
-                num = 3;
-            }
-            List<TraitObject> list = DefaultTraits.Personality.ToList();
-            list.Shuffle();
-            for (int i = 0; i < Math.Min(list.Count, num); i++)
-            {
-                int num2 = ((double)MBRandom.RandomFloat < 0.5) ? MBRandom.RandomInt(list[i].MinValue, 0) : MBRandom.RandomInt(1, list[i].MaxValue + 1);
-                hero.SetTraitLevel(list[i], num2);
-            }
-            foreach (TraitObject traitObject in TraitObject.All.Except(DefaultTraits.Personality))
-            {
-                hero.SetTraitLevel(traitObject, ((double)MBRandom.RandomFloat < 0.5) ? mother.GetTraitLevel(traitObject) : father.GetTraitLevel(traitObject));
-            }
-        }
-
-        public void CreateRandomLostParent(Hero hero, Settlement settlement)
-        {
-            int heroComesOfAge = Campaign.Current.Models.AgeModel.HeroComesOfAge;
-            int age = MBRandom.RandomInt(heroComesOfAge + (int)hero.Age, heroComesOfAge * 2 + (int)hero.Age);
-            CharacterObject randomElementWithPredicate;
-
-            if (Hero.MainHero.IsFemale)
-            {
-                randomElementWithPredicate = settlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && !x.IsFemale);
-                hero.Father = HeroCreator.CreateSpecialHero(randomElementWithPredicate, hero.CurrentSettlement, null, null, age);
-                hero.Father.CharacterObject.HiddenInEncylopedia = true;
-                KillCharacterAction.ApplyByRemove(hero.Father);
-            }
-            else
-            {
-                randomElementWithPredicate = settlement.Culture.NotableAndWandererTemplates.GetRandomElementWithPredicate((CharacterObject x) => x.Occupation == Occupation.Wanderer && x.IsFemale);
-                hero.Mother = HeroCreator.CreateSpecialHero(randomElementWithPredicate, hero.CurrentSettlement, null, null, age);
-                hero.Mother.CharacterObject.HiddenInEncylopedia = true;
-                KillCharacterAction.ApplyByRemove(hero.Mother);
-            }
         }
 
         public void RemoveUnneededAdoptionAttempts()
@@ -266,15 +164,6 @@ namespace Adoption.CampaignBehaviors
             FollowAgentBehavior followAgentBehavior = behaviorGroup.AddBehavior<FollowAgentBehavior>();
             behaviorGroup.SetScriptedBehavior<FollowAgentBehavior>();
             followAgentBehavior.SetTargetAgent(Agent.Main);
-        }
-
-        public void OnHeroAdopted(Hero adopter, Hero adoptedHero)
-        {
-            TextObject text = new("{=DjzDTNHw}{ADOPTER.LINK} adopted {ADOPTED_HERO.LINK}.");
-            StringHelpers.SetCharacterProperties("ADOPTER", adopter.CharacterObject, text);
-            StringHelpers.SetCharacterProperties("ADOPTED_HERO", adoptedHero.CharacterObject, text);
-
-            InformationManager.DisplayMessage(new(text.ToString()));
         }
 
         public void ResetAdoptionAttempts()

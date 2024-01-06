@@ -3,14 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adoption", "Adoption\Adoption.csproj", "{2604E189-7479-4126-A7D0-A2E120BD7FCD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Adoption", "Adoption\Adoption.csproj", "{2604E189-7479-4126-A7D0-A2E120BD7FCD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Beta_Debug|x64 = Beta_Debug|x64
 		Beta_Release|x64 = Beta_Release|x64
-		Debug|x64 = Debug|x64
-		Release|x64 = Release|x64
 		Stable_Debug|x64 = Stable_Debug|x64
 		Stable_Release|x64 = Stable_Release|x64
 	EndGlobalSection
@@ -19,10 +17,6 @@ Global
 		{2604E189-7479-4126-A7D0-A2E120BD7FCD}.Beta_Debug|x64.Build.0 = Beta_Debug|x64
 		{2604E189-7479-4126-A7D0-A2E120BD7FCD}.Beta_Release|x64.ActiveCfg = Beta_Release|x64
 		{2604E189-7479-4126-A7D0-A2E120BD7FCD}.Beta_Release|x64.Build.0 = Beta_Release|x64
-		{2604E189-7479-4126-A7D0-A2E120BD7FCD}.Debug|x64.ActiveCfg = Debug|x64
-		{2604E189-7479-4126-A7D0-A2E120BD7FCD}.Debug|x64.Build.0 = Debug|x64
-		{2604E189-7479-4126-A7D0-A2E120BD7FCD}.Release|x64.ActiveCfg = Release|x64
-		{2604E189-7479-4126-A7D0-A2E120BD7FCD}.Release|x64.Build.0 = Release|x64
 		{2604E189-7479-4126-A7D0-A2E120BD7FCD}.Stable_Debug|x64.ActiveCfg = Stable_Debug|x64
 		{2604E189-7479-4126-A7D0-A2E120BD7FCD}.Stable_Debug|x64.Build.0 = Stable_Debug|x64
 		{2604E189-7479-4126-A7D0-A2E120BD7FCD}.Stable_Release|x64.ActiveCfg = Stable_Release|x64

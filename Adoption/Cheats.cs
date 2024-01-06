@@ -1,6 +1,7 @@
 ﻿using Adoption.CampaignBehaviors;
 
 using Helpers;
+
 using System.Collections.Generic;
 
 using TaleWorlds.CampaignSystem;
@@ -10,7 +11,7 @@ using TaleWorlds.Library;
 
 namespace Adoption
 {
-    internal class Cheats
+    public static class Cheats
     {
         [CommandLineFunctionality.CommandLineArgumentFunction("reset_adoption_attempts", "adoption")]
         public static string ResetAdoptionAttempts(List<string> strings)
@@ -81,11 +82,6 @@ namespace Adoption
             {
                 return "Format is \"adoption.adopt_child\".";
             }
-            AdoptionCampaignBehavior campaignBehavior = Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>();
-            if (campaignBehavior is null)
-            {
-                return "Can not find Adoption Campaign Behavior!";
-            }
 
             // Create hero from child character templates
             Settlement settlement = SettlementHelper.GetRandomTown();
@@ -95,8 +91,14 @@ namespace Adoption
                 settlement.Culture.VillagerMaleChild,
                 settlement.Culture.VillagerFemaleChild,
             };
+            // OnHeroCreated event is fired at end of CreateSpecialHero
+            // refer to AgingCampaignBehavior -> OnHeroCreated for the list.
+            // Must also fulfill DefaultCutscenesCampaignBehavior -> OnHeroComesOfAge
+            // which means there must be:
+            // A) a mother and father
+            // B) both from Player Clan
             Hero hero = HeroCreator.CreateSpecialHero(character.GetRandomElement(), settlement, Clan.PlayerClan, null, age);
-            campaignBehavior.CreateAdoptedHero(hero, settlement);
+            AdoptedHeroCreator.CreateAdoptedHero(hero, settlement);
 
             return "child has been adopted.";
         }
