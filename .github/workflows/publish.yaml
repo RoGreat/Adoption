@@ -87,6 +87,14 @@ jobs:
 ###########################
 #         GITHUB          #
 ###########################
+# publish-on-github:
+#   needs: ["build-module"]
+#   uses: BUTR/workflows/.github/workflows/release-github.yml@master
+#   with:
+#     mod_id: Adoption
+#     mod_version: ${{ needs.build-module.outputs.mod_version }}
+#     mod_description: ${{ needs.build-module.outputs.mod_description }}
+#     artifact_name: bannerlord
   publish-on-github:
     name: Publish Module on GitHub
     runs-on: ubuntu-latest
@@ -109,30 +117,30 @@ jobs:
         path: ./artifact
 
     - name: 7z Module
-      run: 7z a -t7z ${{ inputs.mod_id }}.7z ./artifact/* -mx9
+      run: 7z a -t7z ${{ Adoption }}.7z ./artifact/* -mx9
       #shell: pwsh
       # pwsh casues it to include the root folder
 
     - name: Install Bannerlord.ChangelogParser
-      if: ${{ inputs.mod_version == '' || inputs.mod_description == '' }}
+      if: ${{ needs.build-module.outputs.mod_version == '' || needs.build-module.outputs.mod_description == '' }}
       run: dotnet tool install -g Bannerlord.ChangelogParser;
       shell: pwsh
 
     - name: Set Version
       id: set_version
       run: |
-        if ${{ inputs.mod_version == '' }}
+        if ${{ needs.build-module.outputs.mod_version == '' }}
         then
           vers="$(bannerlord_changelog_parser latestversion -f "$PWD/changelog.txt")"
           echo "::set-output name=mod_version::$vers"
         else
-          echo "::set-output name=mod_version::${{ inputs.mod_version }}"
+          echo "::set-output name=mod_version::${{ needs.build-module.outputs.mod_version }}"
         fi
 
     - name: Set Description
       id: set_description
       run: |
-        if ${{ inputs.mod_description == '' }}
+        if ${{ needs.build-module.outputs.mod_description == '' }}
         then
           desc="$(bannerlord_changelog_parser fulldescription -f "$PWD/changelog.txt")"
           desc="${desc//'%'/'%25'}"
@@ -141,7 +149,7 @@ jobs:
           desc="${desc//$'\r'/'%0D'}"
           echo "::set-output name=mod_description::$desc"
         else
-          desc="${{ inputs.mod_description }}"
+          desc="${{ needs.build-module.outputs.mod_description }}"
           desc="${desc//'%'/'%25'}"
           desc="${desc//$'"'/'%22'}"
           desc="${desc//$'\n'/'%0A'}"
@@ -166,8 +174,8 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./${{ inputs.mod_id }}.7z
-        asset_name: ${{ inputs.mod_id }}.7z
+        asset_path: ./${{ Adoption }}.7z
+        asset_name: ${{ Adoption }}.7z
         asset_content_type: application/x-7z-compressed
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
