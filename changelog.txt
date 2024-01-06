@@ -3,3 +3,12 @@ Version: 2.0.0
 Game Versions: v1.2.8
 * Added console cheat commands under 'adoption'
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.1
+Game Versions: v1.0.0
+* Add former parent of child to try and alleviate any future issues with grown up cutscene or other mother/father checks
+* You can add in a parent for a child using console commands (adoption.create_parent_for_hero)
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Game Versions: v1.0.0
+* Initial release
+---------------------------------------------------------------------------------------------------
