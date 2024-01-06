@@ -5,6 +5,19 @@ VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Adoption", "Adoption\Adoption.csproj", "{2604E189-7479-4126-A7D0-A2E120BD7FCD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{CF3CEBF5-ED00-44B6-A9FC-CE64FB2789F2}"
+	ProjectSection(SolutionItems) = preProject
+		..\changelog.txt = ..\changelog.txt
+		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{5676DE8A-CB4C-419F-8543-9D55C55449E5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{B46123DE-C558-4F46-B1D7-8FC002E655F2}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\publish.yaml = ..\.github\workflows\publish.yaml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Beta_Debug|x64 = Beta_Debug|x64
@@ -24,6 +37,11 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2604E189-7479-4126-A7D0-A2E120BD7FCD} = {5676DE8A-CB4C-419F-8543-9D55C55449E5}
+		{5676DE8A-CB4C-419F-8543-9D55C55449E5} = {CF3CEBF5-ED00-44B6-A9FC-CE64FB2789F2}
+		{B46123DE-C558-4F46-B1D7-8FC002E655F2} = {CF3CEBF5-ED00-44B6-A9FC-CE64FB2789F2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {00D09113-5E77-45E0-B043-AEED0CBB2134}
