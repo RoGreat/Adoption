@@ -14,8 +14,9 @@
     <ModuleName>$(MSBuildProjectName)</ModuleName>
     <ModuleUrl>https://www.nexusmods.com/mountandblade2bannerlord/mods/4793</ModuleUrl>
     <GameFolder>$(BANNERLORD_GAME_DIR)</GameFolder>
-		<ProjectDir>$(MSBuildProjectDirectory)</ProjectDir>
-		<ProjectPath>$(MSBuildProjectFullPath)</ProjectPath>
+		<!-- For Pipeline. Not already defined for some reason. -->
+    <ProjectDir>$(MSBuildProjectDirectory)</ProjectDir>
+    <ProjectPath>$(MSBuildProjectFullPath)</ProjectPath>
     <!-- Module manually override GameVersion -->
     <!-- <OverrideGameVersion>v1.0.0</OverrideGameVersion> -->
   </PropertyGroup>
