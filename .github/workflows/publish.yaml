@@ -96,6 +96,7 @@ jobs:
 #     mod_description: ${{ needs.build-module.outputs.mod_description }}
 #     artifact_name: bannerlord
   publish-on-github:
+    needs: ["build-module"]
     name: Publish Module on GitHub
     runs-on: ubuntu-latest
     environment:
