@@ -111,8 +111,8 @@ jobs:
     - name: Download Module artifact
       uses: actions/download-artifact@v4
       with:
-        name: ${{ inputs.artifact_name }}
-        pattern: ${{ inputs.artifact_name }}-*
+        name: bannerlord
+        pattern: bannerlord-*
         merge-multiple: true
         path: ./artifact
 
