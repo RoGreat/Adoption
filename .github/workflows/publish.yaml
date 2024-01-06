@@ -1,0 +1,111 @@
+name: Publish Module
+
+on:
+  repository_dispatch:
+    types: [game_version_update, game_version_update_patch]
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - '.github/workflows/publish.yml'
+      - 'src/**'
+  pull_request:
+    branches:
+      - develop
+    # will be triggereg when undrafting or requesting review
+    types: [review_requested, ready_for_review]
+    paths:
+      - '.github/workflows/publish.yml'
+      - 'src/**'
+
+env:
+  # Disable the .NET logo in the console output.
+  DOTNET_NOLOGO: true
+  # Disable the .NET first time experience to skip caching NuGet packages and speed up the build.
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # Disable sending .NET CLI telemetry to Microsoft.
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-module:
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: ["test"]
+    name: Build Module
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup
+      uses: butr/actions-common-setup@v2
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+
+    # ignore Stable_Release and treat it as Release
+    - name: Build Adoption (Release)
+      run: >-
+        mkdir bannerlord;
+        dotnet build src/Adoption/Adoption.csproj --configuration Stable_Release -p:GameFolder="$PWD/bannerlord";
+      shell: pwsh
+
+    - name: Install and Run ChangelogParser
+      id: changelog
+      run: |
+        dotnet tool install -g Bannerlord.ChangelogParser
+        vers="$(bannerlord_changelog_parser latestversion -f "$PWD/changelog.txt")"
+        echo "::set-output name=mod_version::$vers"
+        desc="$(bannerlord_changelog_parser fulldescription -f "$PWD/changelog.txt")"
+        desc="${desc//'%'/'%25'}"
+        desc="${desc//$'\n'/'%0A'}"
+        desc="${desc//$'\r'/'%0D'}"
+        echo "::set-output name=mod_description::$desc"
+
+    - name: Upload Bannerlord folder
+      if: ${{ github.ref == 'refs/heads/master' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: bannerlord
+        path: ./bannerlord/
+
+###########################
+#        NEXUSMODS        #
+###########################
+  publish-on-nexusmods:
+    needs: ["build-module"]
+    uses: BUTR/workflows/.github/workflows/release-nexusmods.yml@master
+    with:
+      nexusmods_game_id: mountandblade2bannerlord
+      nexusmods_mod_id: 4793
+      mod_filename: Adoption
+      mod_version: ${{ needs.build-module.outputs.mod_version }}
+      mod_description: ${{ needs.build-module.outputs.mod_description }}
+      artifact_name: bannerlord
+    secrets:
+      NEXUSMODS_APIKEY: ${{ secrets.NEXUSMODS_APIKEY }}
+      NEXUSMODS_COOKIES: ${{ secrets.NEXUSMODS_COOKIES }}
+
+###########################
+#          STEAM          #
+###########################
+  publish-on-steam:
+    needs: ["build-module"]
+    uses: BUTR/workflows/.github/workflows/release-steam.yml@master
+    with:
+      workshop_id: 2893279424
+      mod_id: Adoption
+      mod_description: ${{ needs.build-module.outputs.mod_description }}
+      artifact_name: bannerlord
+    secrets:
+      STEAM_LOGIN: ${{ secrets.STEAM_WORKSHOP_LOGIN }}
+      STEAM_PASSWORD: ${{ secrets.STEAM_WORKSHOP_PASSWORD }}
+      STEAM_AUTH_CODE: ${{ secrets.STEAM_WORKSHOP_AUTH_CODE }}
+
+###########################
+#         GITHUB          #
+###########################
+  publish-on-github:
+    needs: ["build-module"]
+    uses: BUTR/workflows/.github/workflows/release-github.yml@master
+    with:
+      mod_id: Adoption
+      mod_version: ${{ needs.build-module.outputs.mod_version }}
+      mod_description: ${{ needs.build-module.outputs.mod_description }}
+      artifact_name: bannerlord
