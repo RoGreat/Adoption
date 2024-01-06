@@ -1,23 +1,10 @@
-name: Publish Module
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/github-workflow.json
+name: Publish
 
 on:
-  repository_dispatch:
-    types: [game_version_update, game_version_update_patch]
   push:
     branches:
       - main
-      - develop
-    paths:
-      - '.github/workflows/publish.yml'
-      - 'src/**'
-  pull_request:
-    branches:
-      - develop
-    # will be triggereg when undrafting or requesting review
-    types: [review_requested, ready_for_review]
-    paths:
-      - '.github/workflows/publish.yml'
-      - 'src/**'
 
 env:
   # Disable the .NET logo in the console output.
@@ -29,21 +16,21 @@ env:
 
 jobs:
   build-module:
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: ["test"]
     name: Build Module
     runs-on: ubuntu-latest
+    outputs:
+      mod_version: ${{ steps.changelog.outputs.mod_version }}
+      mod_description: ${{ steps.changelog.outputs.mod_description }}
     steps:
     - name: Setup
       uses: butr/actions-common-setup@v2
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
 
-    # ignore Stable_Release and treat it as Release
-    - name: Build Adoption (Release)
+    - name: Build Adoption
       run: >-
         mkdir bannerlord;
-        dotnet build src/Adoption/Adoption.csproj --configuration Stable_Release -p:GameFolder="$PWD/bannerlord";
+        dotnet pack src/Adoption/Adoption.csproj --configuration Release -p:GameFolder="$PWD/bannerlord";
       shell: pwsh
 
     - name: Install and Run ChangelogParser
@@ -59,8 +46,7 @@ jobs:
         echo "::set-output name=mod_description::$desc"
 
     - name: Upload Bannerlord folder
-      if: ${{ github.ref == 'refs/heads/master' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: bannerlord
         path: ./bannerlord/
