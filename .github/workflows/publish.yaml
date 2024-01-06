@@ -51,47 +51,123 @@ jobs:
         name: bannerlord
         path: ./bannerlord/
 
-###########################
-#        NEXUSMODS        #
-###########################
-  publish-on-nexusmods:
-    needs: ["build-module"]
-    uses: BUTR/workflows/.github/workflows/release-nexusmods.yml@master
-    with:
-      nexusmods_game_id: mountandblade2bannerlord
-      nexusmods_mod_id: 4793
-      mod_filename: Adoption
-      mod_version: ${{ needs.build-module.outputs.mod_version }}
-      mod_description: ${{ needs.build-module.outputs.mod_description }}
-      artifact_name: bannerlord
-    secrets:
-      NEXUSMODS_APIKEY: ${{ secrets.NEXUSMODS_APIKEY }}
-      NEXUSMODS_COOKIES: ${{ secrets.NEXUSMODS_COOKIES }}
+# ###########################
+# #        NEXUSMODS        #
+# ###########################
+#   publish-on-nexusmods:
+#     needs: ["build-module"]
+#     uses: BUTR/workflows/.github/workflows/release-nexusmods.yml@master
+#     with:
+#       nexusmods_game_id: mountandblade2bannerlord
+#       nexusmods_mod_id: 4793
+#       mod_filename: Adoption
+#       mod_version: ${{ needs.build-module.outputs.mod_version }}
+#       mod_description: ${{ needs.build-module.outputs.mod_description }}
+#       artifact_name: bannerlord
+#     secrets:
+#       NEXUSMODS_APIKEY: ${{ secrets.NEXUSMODS_APIKEY }}
+#       NEXUSMODS_COOKIES: ${{ secrets.NEXUSMODS_COOKIES }}
 
-###########################
-#          STEAM          #
-###########################
-  publish-on-steam:
-    needs: ["build-module"]
-    uses: BUTR/workflows/.github/workflows/release-steam.yml@master
-    with:
-      workshop_id: 2893279424
-      mod_id: Adoption
-      mod_description: ${{ needs.build-module.outputs.mod_description }}
-      artifact_name: bannerlord
-    secrets:
-      STEAM_LOGIN: ${{ secrets.STEAM_WORKSHOP_LOGIN }}
-      STEAM_PASSWORD: ${{ secrets.STEAM_WORKSHOP_PASSWORD }}
-      STEAM_AUTH_CODE: ${{ secrets.STEAM_WORKSHOP_AUTH_CODE }}
+# ###########################
+# #          STEAM          #
+# ###########################
+#   publish-on-steam:
+#     needs: ["build-module"]
+#     uses: BUTR/workflows/.github/workflows/release-steam.yml@master
+#     with:
+#       workshop_id: 2893279424
+#       mod_id: Adoption
+#       mod_description: ${{ needs.build-module.outputs.mod_description }}
+#       artifact_name: bannerlord
+#     secrets:
+#       STEAM_LOGIN: ${{ secrets.STEAM_WORKSHOP_LOGIN }}
+#       STEAM_PASSWORD: ${{ secrets.STEAM_WORKSHOP_PASSWORD }}
+#       STEAM_AUTH_CODE: ${{ secrets.STEAM_WORKSHOP_AUTH_CODE }}
 
 ###########################
 #         GITHUB          #
 ###########################
   publish-on-github:
-    needs: ["build-module"]
-    uses: BUTR/workflows/.github/workflows/release-github.yml@master
-    with:
-      mod_id: Adoption
-      mod_version: ${{ needs.build-module.outputs.mod_version }}
-      mod_description: ${{ needs.build-module.outputs.mod_description }}
-      artifact_name: bannerlord
+    name: Publish Module on GitHub
+    runs-on: ubuntu-latest
+    environment:
+      name: GitHub Release
+      url: ${{ steps.upload_release_asset.outputs.browser_download_url }}
+    steps:
+    
+    - name: Setup
+      uses: butr/actions-common-setup@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Download Module artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifact_name }}
+        pattern: ${{ inputs.artifact_name }}-*
+        merge-multiple: true
+        path: ./artifact
+
+    - name: 7z Module
+      run: 7z a -t7z ${{ inputs.mod_id }}.7z ./artifact/* -mx9
+      #shell: pwsh
+      # pwsh casues it to include the root folder
+
+    - name: Install Bannerlord.ChangelogParser
+      if: ${{ inputs.mod_version == '' || inputs.mod_description == '' }}
+      run: dotnet tool install -g Bannerlord.ChangelogParser;
+      shell: pwsh
+
+    - name: Set Version
+      id: set_version
+      run: |
+        if ${{ inputs.mod_version == '' }}
+        then
+          vers="$(bannerlord_changelog_parser latestversion -f "$PWD/changelog.txt")"
+          echo "::set-output name=mod_version::$vers"
+        else
+          echo "::set-output name=mod_version::${{ inputs.mod_version }}"
+        fi
+
+    - name: Set Description
+      id: set_description
+      run: |
+        if ${{ inputs.mod_description == '' }}
+        then
+          desc="$(bannerlord_changelog_parser fulldescription -f "$PWD/changelog.txt")"
+          desc="${desc//'%'/'%25'}"
+          desc="${desc//$'"'/'%22'}"
+          desc="${desc//$'\n'/'%0A'}"
+          desc="${desc//$'\r'/'%0D'}"
+          echo "::set-output name=mod_description::$desc"
+        else
+          desc="${{ inputs.mod_description }}"
+          desc="${desc//'%'/'%25'}"
+          desc="${desc//$'"'/'%22'}"
+          desc="${desc//$'\n'/'%0A'}"
+          desc="${desc//$'\r'/'%0D'}"
+          echo "::set-output name=mod_description::$desc"
+        fi
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      id: create_release
+      with:
+        tag_name: v${{ steps.set_version.outputs.mod_version }}
+        release_name: Release ${{ steps.set_version.outputs.mod_version }}
+        body: ${{ steps.set_description.outputs.mod_description }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Release Asset
+      id: upload_release_asset
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./${{ inputs.mod_id }}.7z
+        asset_name: ${{ inputs.mod_id }}.7z
+        asset_content_type: application/x-7z-compressed
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
