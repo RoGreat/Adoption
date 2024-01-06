@@ -174,8 +174,8 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./${{ Adoption }}.7z
-        asset_name: ${{ Adoption }}.7z
+        asset_path: ./Adoption.7z
+        asset_name: Adoption.7z
         asset_content_type: application/x-7z-compressed
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
