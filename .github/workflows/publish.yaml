@@ -117,7 +117,7 @@ jobs:
         path: ./artifact
 
     - name: 7z Module
-      run: 7z a -t7z ${{ Adoption }}.7z ./artifact/* -mx9
+      run: 7z a -t7z Adoption.7z ./artifact/* -mx9
       #shell: pwsh
       # pwsh casues it to include the root folder
 
