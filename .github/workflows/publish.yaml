@@ -84,9 +84,9 @@ jobs:
 #       STEAM_PASSWORD: ${{ secrets.STEAM_WORKSHOP_PASSWORD }}
 #       STEAM_AUTH_CODE: ${{ secrets.STEAM_WORKSHOP_AUTH_CODE }}
 
-###########################
-#         GITHUB          #
-###########################
+# ###########################
+# #         GITHUB          #
+# ###########################
 #   publish-on-github:
 #     needs: ["build-module"]
 #     uses: BUTR/workflows/.github/workflows/release-github.yml@master
