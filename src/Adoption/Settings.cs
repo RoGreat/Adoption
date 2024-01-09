@@ -24,7 +24,9 @@ namespace Adoption
         public float AdoptionChance { get; set; } = 0.5f;
 
         [SettingPropertyButton("{=zSklyZ76}Reset Adoption Attempts", Content = "{=Z3WQjWfW}Reset", Order = 1, RequireRestart = false)]
-        public Action ResetAdoptionAttempts { get; set; } = () => Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>()?.ResetAdoptionAttempts();
-
+        public Action ResetAdoptionAttempts { get; set; } = () => 
+        {
+            Campaign.Current?.GetCampaignBehavior<AdoptionCampaignBehavior>()?.ResetAdoptionAttempts();
+        };
     }
 }

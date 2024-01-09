@@ -16,6 +16,10 @@ namespace Adoption
         [CommandLineFunctionality.CommandLineArgumentFunction("reset_adoption_attempts", "adoption")]
         public static string ResetAdoptionAttempts(List<string> strings)
         {
+            if (!CampaignCheats.CheckCheatUsage(ref CampaignCheats.ErrorType))
+            {
+                return CampaignCheats.ErrorType;
+            }
             if (CampaignCheats.CheckParameters(strings, 0) && !CampaignCheats.CheckHelp(strings))
             {
                 AdoptionCampaignBehavior campaignBehavior = Campaign.Current.GetCampaignBehavior<AdoptionCampaignBehavior>();

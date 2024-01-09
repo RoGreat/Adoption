@@ -1,7 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.0.1
+Game Versions: v1.2.8
+* Error handling for reset adoption attempts
+---------------------------------------------------------------------------------------------------
 Version: 2.0.0
 Game Versions: v1.2.8
 * Added console cheat commands under 'adoption'
+* Localization fixes and addition
+* Hard dependency on BUTR stack
+* Code refactor
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
 Game Versions: v1.0.0
